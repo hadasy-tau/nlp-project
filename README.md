@@ -63,10 +63,22 @@ Everything lives in the YAML configs ([configs/default.yaml](configs/default.yam
 - **Model**: `model.name` — any HF causal LM. Pythia models are preferred because
   pretrained tuned lenses exist for the whole deduped suite (70m…6.9b) plus
   `gpt2`/`gpt2-large`. For GPT-2 also set `lora.target_modules: [c_attn]`.
-- **Data**: `data.dataset` + `data.fields` — the column mapping lets you swap
-  CounterFact for LAMA/T-REx, ZsRE, etc. without code changes. If the dataset has
-  no paraphrase column, set `data.fields.paraphrases: null` (paraphrase holdout
-  eval is skipped).
+- **Data**: `data.dataset` + `data.fields` — the field mapping lets you swap
+  CounterFact for LAMA/T-REx, ZsRE, etc. without code changes. Dotted paths reach
+  into nested schemas (`requested_rewrite.target_true.str`), and a `{}` or
+  `{subject}` placeholder in the prompt is filled with the subject.
+
+  The default is `azhx/counterfact` (the full original) rather than the flattened
+  `NeelNanda/counterfact-tracing`, because **only the full version ships
+  `paraphrase_prompts`** — without them the held-out generalization probe
+  (pitfall 3) cannot run. The flattened version still works if you want it:
+
+  ```yaml
+  data:
+    dataset: NeelNanda/counterfact-tracing
+    fields: {prompt: prompt, subject: subject, target_true: target_true,
+             target_false: target_false, relation: relation_id, paraphrases: null}
+  ```
 - **Lenses**: `lens.use_logit` / `lens.use_tuned`; `lens.tuned_lens_id` defaults
   to the model name. If no pretrained tuned lens exists for the model, the
   pipeline warns and continues with the logit lens only.
@@ -85,6 +97,11 @@ Use [kaggle/kaggle_pipeline.ipynb](kaggle/kaggle_pipeline.ipynb). Enable a GPU
   for free background execution.
 - Stages are resumable: if a session dies, re-run with `--stages` starting from
   the last completed stage (artifacts are on disk).
+- **`pip uninstall -y torchao` is required** (the launcher does it). Kaggle images
+  ship torchao 0.10, and peft's LoRA dispatcher raises `ImportError` on anything
+  below 0.16 as it wraps each layer. We don't use torchao quantization, so removing
+  it is the clean fix. A preflight check fails fast with this message if it's still
+  installed, rather than dying after data prep.
 
 ## Outputs
 

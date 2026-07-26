@@ -26,6 +26,29 @@ def _out(cfg) -> Path:
     return p
 
 
+def _preflight(stages: list[str]) -> None:
+    """Fail in seconds on known environment breakage, not 15 minutes into a run.
+
+    peft's LoRA dispatcher calls is_torchao_available() while wrapping each layer,
+    and that helper *raises* when torchao is installed but older than peft wants
+    (Kaggle images ship an old one).
+    """
+    if "train_lora" not in stages:
+        return
+    try:
+        from peft.import_utils import is_torchao_available
+    except ImportError:
+        return
+    try:
+        is_torchao_available()
+    except ImportError as e:
+        raise SystemExit(
+            f"[preflight] peft cannot wrap layers with the installed torchao:\n  {e}\n"
+            "This pipeline does not use torchao quantization, so removing it is the fix:\n"
+            "    pip uninstall -y torchao"
+        )
+
+
 def stage_prepare_data(cfg, tokenizer, device):
     from .data import make_synthetic, prepare_facts
 
@@ -97,6 +120,7 @@ def main(argv=None):
     unknown = [s for s in stages if s not in STAGES]
     if unknown:
         ap.error(f"Unknown stage(s) {unknown}; valid: {STAGES}")
+    _preflight(stages)
 
     tokenizer = load_tokenizer(cfg)
     for stage in STAGES:  # canonical order regardless of input order

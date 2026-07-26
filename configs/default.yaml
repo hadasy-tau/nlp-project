@@ -13,16 +13,20 @@ model:
   device: auto            # auto | cuda | cpu
 
 data:
-  dataset: NeelNanda/counterfact-tracing
+  # Full CounterFact — the only mirror that ships paraphrase_prompts, which the
+  # held-out generalization probe needs. The flattened NeelNanda/counterfact-tracing
+  # has no paraphrases; see the alternative mapping in the README.
+  dataset: azhx/counterfact
   split: train
   max_records: null        # cap for smoke tests, e.g. 2000
-  # Column mapping — change here if you swap in a different fact dataset.
+  # Field mapping — dotted paths reach into nested schemas. Change here (not in
+  # code) to swap in a different fact dataset.
   fields:
-    prompt: prompt
-    subject: subject
-    target_true: target_true
-    target_false: target_false
-    relation: relation_id
+    prompt: requested_rewrite.prompt          # a '{}' template; subject is filled in
+    subject: requested_rewrite.subject
+    target_true: requested_rewrite.target_true.str
+    target_false: requested_rewrite.target_new.str
+    relation: requested_rewrite.relation_id
     paraphrases: paraphrase_prompts   # set null if the dataset has none
   # Decision rule from the handoff: need >= this many base-model-known facts,
   # otherwise move one model size up.
