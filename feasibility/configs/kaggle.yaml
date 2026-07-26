@@ -1,0 +1,24 @@
+# Full feasibility run for Kaggle (P100 / T4).
+# Scores pythia-410m on all of CounterFact, then runs both lenses on a sample.
+
+model:
+  name: EleutherAI/pythia-410m-deduped
+  dtype: auto        # -> float16 on GPU (T4/P100 have no bf16)
+  device: auto
+  batch_size: 64
+
+data:
+  name: NeelNanda/counterfact-tracing
+  split: train
+  prompt_column: prompt
+  target_column: target_true
+  relation_column: relation_id
+  limit: null        # null = the whole dataset (~22k rows)
+
+lens:
+  sample_size: 50
+  batch_size: 8
+  top_k: 5
+
+output_dir: outputs
+seed: 0
