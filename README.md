@@ -11,6 +11,10 @@ statements, decoding hidden states at every layer with **logit lens** and
 
 TAU NLP course project.
 
+> **Feasibility gate**: before real runs, [feasibility/](feasibility/) scores the
+> base model on the full dataset and smoke-tests both lenses — it answers the
+> decision rule (enough known facts?) and produces the known/unknown split.
+
 ## Pipeline
 
 ```
