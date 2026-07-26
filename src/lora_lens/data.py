@@ -28,6 +28,44 @@ def _pseudo_name(rng: random.Random) -> str:
     return f"{word()} {word()}"
 
 
+_MISSING = object()
+
+
+def _get_path(rec, path: str):
+    """Look up a dotted path, so nested datasets work without code changes.
+
+    'requested_rewrite.target_true.str' reaches into the full CounterFact schema;
+    a plain 'target_true' still works for flattened datasets.
+    """
+    cur = rec
+    for part in path.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return _MISSING
+        cur = cur[part]
+    return cur
+
+
+def _fix_mojibake(s: str) -> str:
+    """Repair double-encoded UTF-8 ('FranÃ§ois' -> 'François').
+
+    Some CounterFact mirrors were uploaded with UTF-8 bytes decoded as latin-1.
+    Left as-is when the round-trip is not possible.
+    """
+    try:
+        return s.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return s
+
+
+def _fill_subject(prompt: str, subject: str) -> str:
+    """CounterFact prompts are templates ('The mother tongue of {} is')."""
+    if "{subject}" in prompt:
+        return prompt.replace("{subject}", subject)
+    if "{}" in prompt:
+        return prompt.replace("{}", subject)
+    return prompt
+
+
 def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
     """Load the fact dataset, normalize columns, and keep single-token answers only.
 
@@ -40,43 +78,55 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
     if cfg.data.get("max_records"):
         ds = ds.select(range(min(cfg.data.max_records, len(ds))))
 
-    cols = set(ds.column_names)
-    for key in ("prompt", "subject", "target_true", "target_false", "relation"):
-        if f[key] not in cols:
+    probe = ds[0]
+    for key in ("prompt", "subject", "target_true", "relation"):
+        if _get_path(probe, f[key]) is _MISSING:
             raise KeyError(
-                f"Column {f[key]!r} (mapped from data.fields.{key}) not in dataset "
-                f"{cfg.data.dataset}. Available: {sorted(cols)}"
+                f"Field {f[key]!r} (mapped from data.fields.{key}) not in dataset "
+                f"{cfg.data.dataset}. Top-level columns: {sorted(ds.column_names)}. "
+                "Nested fields are addressable with dots, e.g. "
+                "'requested_rewrite.target_true.str'."
             )
-    para_col = f.get("paraphrases")
-    if para_col and para_col not in cols:
-        print(f"[data] WARNING: paraphrase column {para_col!r} not found — "
-              "paraphrase holdout evaluation will be skipped.")
-        para_col = None
+
+    para_path = f.get("paraphrases")
+    if para_path and _get_path(probe, para_path) is _MISSING:
+        print(f"[data] WARNING: paraphrase field {para_path!r} not found in "
+              f"{cfg.data.dataset} — the held-out paraphrase probe (pitfall 3) will be "
+              "SKIPPED, so a late-layer shift cannot be distinguished from prompt "
+              "memorization. Use a dataset that ships paraphrases (e.g. azhx/counterfact).")
+        para_path = None
+
+    false_path = f.get("target_false")
+    has_false = bool(false_path) and _get_path(probe, false_path) is not _MISSING
 
     rows = []
     n_multi = 0
     for i, rec in enumerate(ds):
-        prompt = rec[f["prompt"]].rstrip()  # answer carries the leading space, not the prompt
-        answer = str(rec[f["target_true"]]).strip()
+        subject = _fix_mojibake(str(_get_path(rec, f["subject"])).strip())
+        # The answer carries the leading space, so the prompt must not (pitfall 1).
+        prompt = _fill_subject(str(_get_path(rec, f["prompt"])), subject).rstrip()
+        answer = str(_get_path(rec, f["target_true"])).strip()
         answer_ids = encode_answer(tokenizer, answer)
         if len(answer_ids) != 1:
             n_multi += 1
             continue
-        paras = list(rec[para_col]) if para_col else []
+        paras = [_fix_mojibake(str(p).rstrip()) for p in (_get_path(rec, para_path) or [])] \
+            if para_path else []
         rows.append({
             "fact_id": f"cf_{i}",
-            "relation": str(rec[f["relation"]]),
-            "subject": str(rec[f["subject"]]),
+            "relation": str(_get_path(rec, f["relation"])),
+            "subject": subject,
             "prompt": prompt,
             "paraphrases": paras,
             "answer": answer,
             "answer_token_id": answer_ids[0],
-            "target_false": str(rec[f["target_false"]]).strip(),
+            "target_false": str(_get_path(rec, false_path)).strip() if has_false else "",
         })
 
     df = pd.DataFrame(rows)
+    n_para = int(df["paraphrases"].str.len().gt(0).sum()) if len(df) else 0
     print(f"[data] {len(df)} facts kept, {n_multi} dropped (multi-token answer) "
-          f"out of {len(ds)} records.")
+          f"out of {len(ds)} records; {n_para} have held-out paraphrases.")
     return df
 
 

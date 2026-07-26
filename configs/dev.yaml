@@ -11,15 +11,16 @@ model:
   device: auto
 
 data:
-  dataset: NeelNanda/counterfact-tracing
+  # Same loader path as default.yaml, so dev exercises the real code.
+  dataset: azhx/counterfact
   split: train
   max_records: 1000
   fields:
-    prompt: prompt
-    subject: subject
-    target_true: target_true
-    target_false: target_false
-    relation: relation_id
+    prompt: requested_rewrite.prompt
+    subject: requested_rewrite.subject
+    target_true: requested_rewrite.target_true.str
+    target_false: requested_rewrite.target_new.str
+    relation: requested_rewrite.relation_id
     paraphrases: paraphrase_prompts
   min_known_facts: 20      # relaxed: 160m barely knows facts; dev only
   n_per_condition: 50
