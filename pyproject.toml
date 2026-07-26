@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lora-lens"
+version = "0.1.0"
+description = "Layer-wise analysis of LoRA's effect on factual predictions (logit/tuned lens)"
+requires-python = ">=3.10"
+dependencies = [
+    "transformers>=4.40",
+    "datasets>=2.18",
+    "peft>=0.10",
+    "pandas>=2.0",
+    "pyarrow>=14.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.60",
+]
+
+[project.optional-dependencies]
+tuned = ["tuned-lens>=0.2"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

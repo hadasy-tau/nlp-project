@@ -1,0 +1,59 @@
+# Dev/debug config: pythia-160m-deduped, tiny samples, fast end-to-end run.
+# Usage: python -m lora_lens.run --config configs/dev.yaml --stages all
+
+seed: 42
+output_dir: outputs_dev
+
+model:
+  name: EleutherAI/pythia-160m-deduped
+  revision: null
+  inference_dtype: float16
+  device: auto
+
+data:
+  dataset: NeelNanda/counterfact-tracing
+  split: train
+  max_records: 1000
+  fields:
+    prompt: prompt
+    subject: subject
+    target_true: target_true
+    target_false: target_false
+    relation: relation_id
+    paraphrases: paraphrase_prompts
+  min_known_facts: 20      # relaxed: 160m barely knows facts; dev only
+  n_per_condition: 50
+  max_relation_fraction: 0.5
+  synthetic:
+    n_facts: 30
+    seed: 0
+
+scoring:
+  batch_size: 32
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules: [query_key_value]
+  lr: 1.0e-4
+  epochs: 2
+  batch_size: 8
+  checkpoint_every: 20
+  max_grad_norm: 1.0
+
+lens:
+  use_logit: true
+  use_tuned: true
+  tuned_lens_id: null
+
+analysis:
+  batch_size: 16
+  top_k: [1, 5, 10]
+  checkpoints: all
+  eval_paraphrases: true
+
+patching:
+  enabled: true
+  batch_size: 8
+  max_facts_per_condition: 20

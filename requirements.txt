@@ -1,0 +1,9 @@
+# torch is preinstalled on Kaggle GPU images — do not pin it here.
+transformers>=4.40
+datasets>=2.18
+peft>=0.10
+tuned-lens>=0.2
+pandas>=2.0
+pyarrow>=14.0
+pyyaml>=6.0
+tqdm>=4.60

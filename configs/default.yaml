@@ -1,0 +1,70 @@
+# Primary config: pythia-410m-deduped on CounterFact.
+# Override any key from the CLI: --set model.name=EleutherAI/pythia-1b-deduped
+
+seed: 42
+output_dir: outputs   # on Kaggle, override to /kaggle/working/outputs
+
+model:
+  name: EleutherAI/pythia-410m-deduped
+  revision: null
+  # fp16 for inference (Kaggle T4/P100 do not support bf16). Training loads fp32
+  # weights and uses fp16 autocast; log-softmax is always computed in fp32.
+  inference_dtype: float16
+  device: auto            # auto | cuda | cpu
+
+data:
+  dataset: NeelNanda/counterfact-tracing
+  split: train
+  max_records: null        # cap for smoke tests, e.g. 2000
+  # Column mapping — change here if you swap in a different fact dataset.
+  fields:
+    prompt: prompt
+    subject: subject
+    target_true: target_true
+    target_false: target_false
+    relation: relation_id
+    paraphrases: paraphrase_prompts   # set null if the dataset has none
+  # Decision rule from the handoff: need >= this many base-model-known facts,
+  # otherwise move one model size up.
+  min_known_facts: 300
+  # Per-condition sample sizes for LoRA training (null = use all available).
+  n_per_condition: 500
+  # Stratification guard: no single relation may exceed this fraction of a condition.
+  max_relation_fraction: 0.25
+  synthetic:
+    n_facts: 200
+    seed: 0
+
+scoring:
+  batch_size: 64
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [query_key_value]   # GPTNeoX attention; use [c_attn] for GPT-2
+  lr: 1.0e-4
+  epochs: 5
+  batch_size: 16
+  # Save the adapter every N optimizer steps -> metrics as a function of training
+  # step (pitfall 4: don't confound fact type with amount of learning).
+  checkpoint_every: 50
+  max_grad_norm: 1.0
+
+lens:
+  use_logit: true
+  use_tuned: true
+  # null = use model.name as the lens resource id on the AlignmentResearch/tuned-lens space
+  tuned_lens_id: null
+
+analysis:
+  batch_size: 32
+  top_k: [1, 5, 10]
+  # Which checkpoints to analyze; "all" or a list of steps, always includes final.
+  checkpoints: all
+  eval_paraphrases: true   # heldout paraphrases are never seen in training
+
+patching:
+  enabled: true
+  batch_size: 16
+  max_facts_per_condition: 100
