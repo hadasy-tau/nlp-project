@@ -114,17 +114,20 @@ def report_highlights(summary: pd.DataFrame) -> None:
         print(f"  {tag}  acc {acc_b:.3f} → {acc_f:.3f}  (Δ={gain:+.3f})  "
               f"first-layer shift {shift:+.1f}")
 
-    # Highlight the unknown vs synthetic paraphrase contrast.
+    # Highlight the unknown vs known paraphrase contrast.
+    # (Synthetic facts have no CounterFact paraphrase prompts, so that condition is absent here.)
     para = logit[logit["prompt_type"] == "paraphrase"].set_index("condition")
-    if "unknown" in para.index and "synthetic" in para.index:
+    if "unknown" in para.index and "known" in para.index:
         unk_gain = para.loc["unknown", "acc_gain"]
-        syn_gain = para.loc["synthetic", "acc_gain"]
-        ratio = unk_gain / syn_gain if syn_gain > 0 else float("inf")
-        print(f"\n  *** Paraphrase generalisation: unknown Δ={unk_gain:+.3f} vs "
-              f"synthetic Δ={syn_gain:+.3f} (ratio {ratio:.1f}x) ***")
-        if unk_gain > syn_gain * 2:
-            print("      → LoRA is primarily ELICITING latent knowledge for unknown facts,")
-            print("        not just memorising prompts (unlike synthetic).")
+        kno_gain = para.loc["known", "acc_gain"]
+        unk_base = para.loc["unknown", "final_accuracy_base"]
+        kno_base = para.loc["known", "final_accuracy_base"]
+        print(f"\n  *** Paraphrase generalisation: "
+              f"unknown Δ={unk_gain:+.3f} (base {unk_base:.3f}) vs "
+              f"known Δ={kno_gain:+.3f} (base {kno_base:.3f}) ***")
+        if unk_gain >= kno_gain * 0.7:
+            print("      → Unknown facts generalise nearly as well as known ones,")
+            print("        suggesting LoRA elicits latent knowledge rather than memorising prompts.")
 
 
 def run_analysis(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
