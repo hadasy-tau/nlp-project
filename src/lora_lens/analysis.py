@@ -29,7 +29,9 @@ def build_eval_table(cfg, conditions: pd.DataFrame) -> pd.DataFrame:
                      "prompt": r["prompt"], "prompt_type": "train",
                      "answer_token_id": r["answer_token_id"]})
         if cfg.analysis.eval_paraphrases:
-            for p in r["paraphrases"]:
+            val = r.get("paraphrases", None)
+            paras = list(val) if val is not None and hasattr(val, "__iter__") else []
+            for p in paras:
                 rows.append({"fact_id": r["fact_id"], "condition": r["condition"],
                              "prompt": str(p).rstrip(), "prompt_type": "paraphrase",
                              "answer_token_id": r["answer_token_id"]})

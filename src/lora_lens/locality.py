@@ -31,7 +31,9 @@ def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> No
     # Expand neighborhood prompts — one row per prompt per fact.
     rows_exp = []
     for _, r in conditions.iterrows():
-        for p in r.get("neighborhood_prompts", []) or []:
+        val = r.get("neighborhood_prompts", None)
+        prompts = list(val) if val is not None and hasattr(val, "__iter__") else []
+        for p in prompts:
             rows_exp.append({"fact_id": r["fact_id"], "condition": r["condition"],
                              "prompt": str(p).rstrip()})
 
