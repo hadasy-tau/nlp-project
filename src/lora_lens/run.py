@@ -18,7 +18,7 @@ from .config import load_config, save_config
 from .utils import load_model, load_tokenizer, resolve_device, set_seed, free_model
 
 STAGES = ["prepare_data", "score_base", "build_conditions", "train_lora", "analyze",
-          "patch", "score_locality", "rank_ablation"]
+          "patch", "score_locality", "rank_ablation", "visualize"]
 
 
 def _out(cfg) -> Path:
@@ -114,6 +114,12 @@ def stage_rank_ablation(cfg, tokenizer, device):
 
     conditions = pd.read_parquet(_out(cfg) / "conditions.parquet")
     run_rank_ablation(cfg, tokenizer, conditions, device)
+
+
+def stage_visualize(cfg, tokenizer, device):
+    from .visualize import run_visualize
+
+    run_visualize(cfg)
 
 
 def main(argv=None):
