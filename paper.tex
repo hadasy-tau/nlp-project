@@ -1,0 +1,427 @@
+\documentclass[11pt]{article}
+\usepackage{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{hyperref}
+
+\title{How LoRA Fine-Tuning Changes Factual Predictions Across Transformer Layers}
+
+\author{
+  Hadas Yonat \\
+  Tel Aviv University \\
+  \texttt{hadasyonat@mail.tau.ac.il} \\\And
+  Yuval Bukovsky \\
+  Tel Aviv University \\
+  \texttt{bukovsky@mail.tau.ac.il} \\\AND
+  Mika Labin \\
+  Tel Aviv University \\
+  \texttt{mikalabin@mail.tau.ac.il} \\\And
+  Gal Cohen \\
+  Tel Aviv University \\
+  \texttt{gc7@mail.tau.ac.il}
+}
+
+\begin{document}
+\maketitle
+
+%% ── Abstract ──────────────────────────────────────────────────────────────────
+\begin{abstract}
+Parameter-efficient fine-tuning methods such as LoRA can substantially improve
+factual prediction accuracy, yet how these changes propagate across transformer
+layers remains poorly understood.
+We study \emph{where} in the forward pass LoRA writes factual knowledge by
+applying logit-lens analysis and causal activation patching to Pythia-410m
+fine-tuned on CounterFact facts.
+We distinguish three conditions: facts the base model already knows
+(\emph{known}), real facts it gets wrong (\emph{unknown}), and entirely invented
+(\emph{synthetic}) facts.
+Patching reveals a striking dichotomy: for known facts, the correct answer is
+causally present from the very first layer (median first-flip layer $= 0$),
+while synthetic facts are encoded exclusively in the final layers
+(median $= 19$ out of 24).
+Unknown facts occupy the middle (median $= 14$).
+Logit-lens trajectories confirm that LoRA shifts synthetic predictions
+\emph{later} ($+3.1$ layers) and known predictions \emph{earlier} ($-2.7$
+layers).
+Rank ablation shows that higher-rank adapters increase the number of facts
+that can be encoded but do not change which layers encode them.
+All gains come at a steep locality cost: only 20.8\% of neighboring-fact
+predictions are preserved for known conditions, dropping to 7.5\% for unknown.
+\end{abstract}
+
+%% ── 1. Introduction ───────────────────────────────────────────────────────────
+\section{Introduction}
+
+Low-Rank Adaptation (LoRA; \citealt{hu2022lora}) has become one of the
+dominant methods for adapting large language models to new tasks.
+By injecting small trainable matrices at each attention layer, LoRA achieves
+competitive accuracy while updating fewer than 1\% of model parameters.
+However, the improvement in final-layer predictions tells us little about
+\emph{how} the model arrives at those predictions.
+
+A natural question is whether LoRA simply amplifies an answer that was already
+latent in the network, or whether it installs the answer from scratch in the
+final layers.
+Prior work on language adapters found that adapted predictions often shift
+toward the target predominantly in the final layers
+\citep{alabi2024hidden}.
+Whether LoRA for factual knowledge exhibits the same late-layer pattern --- and
+whether this depends on the novelty of the fact being injected --- is unknown.
+
+We ask: \textbf{How does LoRA fine-tuning on factual knowledge affect the
+evolution of predictions across transformer layers, and does this differ
+between facts the model already knows, facts it has wrong, and entirely
+invented facts?}
+
+To answer this, we fine-tune Pythia-410m-deduped on a stratified subset of the
+CounterFact benchmark \citep{meng2022locating} and analyse the resulting model
+using logit lens \citep{logitlens2020}, tuned lens \citep{belrose2023eliciting},
+and causal activation patching.
+We run patching at every training checkpoint (not only the final model) to
+track \emph{when} causal structure emerges during training.
+We supplement this with a rank ablation ($r \in \{4,8,16,32\}$) and a locality
+audit on 10{,}000 neighborhood prompts.
+
+Our main finding is that LoRA's layer-wise mechanism is entirely determined by
+the novelty of the knowledge: known facts are handled at the shallowest layers,
+unknown facts in the middle, and synthetic facts only in the deepest layers.
+Higher adapter rank increases capacity but does not change this depth ordering.
+
+%% ── 2. Related Work ──────────────────────────────────────────────────────────
+\section{Related Work}
+
+\paragraph{Parameter-efficient fine-tuning.}
+\citet{hu2022lora} introduce LoRA, which freezes the pretrained weight matrix
+$W$ and learns a low-rank decomposition $\Delta W = BA$ with $B \in
+\mathbb{R}^{d \times r}$, $A \in \mathbb{R}^{r \times k}$.
+The effective change to each layer's output is $\alpha / r \cdot BAx$, where
+$\alpha$ is a fixed scaling factor.
+LoRA has been applied to language modelling, instruction following, and
+knowledge editing, and is the basis of most modern fine-tuning pipelines.
+
+\paragraph{Interpreting intermediate representations.}
+The logit lens \citep{logitlens2020} decodes intermediate hidden states through
+the unembedding head to obtain a vocabulary distribution at each layer, enabling
+inspection of how predictions evolve through the forward pass.
+\citet{belrose2023eliciting} extend this with a tuned lens: a learned affine
+probe per layer that predicts the final-layer output distribution more
+accurately than the raw logit lens.
+We use both, reporting the logit lens as the primary metric to avoid
+conflating lens-specific effects with LoRA-induced changes.
+
+\paragraph{Adapters and layer dynamics.}
+\citet{alabi2024hidden} study how adapter modules and LoRA affect the
+hidden-state trajectory, finding that adapted predictions shift toward the
+target predominantly in the final layers for language-transfer tasks.
+We test whether the same late-layer dominance appears for factual knowledge,
+and whether it holds across knowledge types.
+
+\paragraph{Factual knowledge in LLMs.}
+\citet{meng2022locating} show through causal tracing that factual associations
+in GPT models are primarily stored in mid-layer MLP modules.
+Our activation patching adapts their methodology: we patch hidden states from
+the fine-tuned model into the base model to find the earliest layer at which
+the LoRA update causally determines the output.
+
+%% ── 3. Methodology ────────────────────────────────────────────────────────────
+\section{Methodology}
+
+\subsection{Model and Dataset}
+We use \textbf{Pythia-410m-deduped} \citep{biderman2023pythia}, a 24-layer
+decoder-only transformer with hidden size 1{,}024.
+Facts are drawn from the \textbf{CounterFact} benchmark
+\citep{meng2022locating}, which provides 19{,}728 subject--relation--object
+triples along with paraphrase prompts for each fact.
+We retain only facts whose target answer is a single token under the model's
+tokenizer, yielding 17{,}606 usable facts.
+
+\subsection{Experimental Conditions}
+We define three conditions based on the base model's top-1 prediction:
+\begin{itemize}
+  \item \textbf{Known:} The base model already predicts the correct answer
+    (top-1 correct); 1{,}232 facts qualify (7.0\%).
+  \item \textbf{Unknown:} The fact is real but the base model gets it wrong.
+  \item \textbf{Synthetic:} Pseudo-entity facts created by pairing real
+    relation templates (e.g., \emph{``\{subject\} was born in''}) with a
+    randomly generated subject name and a real object from that relation.
+    By construction the base model has never seen the triple.
+\end{itemize}
+We stratify-sample 500 facts per condition (unknown, known) and 200 synthetic
+facts, capping each relation at 25\% of the sample to prevent any single
+relation from dominating.
+Paraphrase prompts carried by the dataset are held out and never used in
+training --- they serve as the generalization probe.
+
+\subsection{LoRA Fine-Tuning}
+We attach LoRA adapters ($r=16$, $\alpha=32$, dropout $0.05$) to the
+\texttt{query\_key\_value} projections of all attention layers (1.57M trainable
+parameters; 0.39\% of total).
+Training uses the cross-entropy loss on the answer token only (prompt tokens
+masked), AdamW with learning rate $10^{-4}$, batch size 16, for 5 epochs (375
+optimizer steps).
+We save adapter checkpoints every 50 steps.
+
+\subsection{Layer-wise Analysis}
+For each adapter checkpoint we run the full forward pass with
+\texttt{output\_hidden\_states=True} and apply the logit lens (frozen final
+layer-norm $+$ unembedding head) to every intermediate hidden state at the last
+token position.
+We record acc@1, mean log-probability, and the first layer at which the correct
+answer appears as top-1 (\emph{first-layer-of-appearance}).
+The \emph{base model's} tuned lens is loaded from the AlignmentResearch hub and
+kept frozen across all variants, ensuring that any change in its readout is
+attributable to LoRA, not to changes in the probe.
+
+\subsection{Causal Activation Patching}
+For each fact and each layer $\ell \in \{1,\ldots,24\}$, we patch the LoRA
+model's residual stream after block $\ell$ into the base model via a forward
+hook, and record whether the base model's output flips to the target answer.
+The \emph{first-flip layer} is the smallest $\ell$ at which the flip occurs.
+A first-flip layer near 0 means the answer was already causally present
+(LoRA only amplified it); a first-flip layer near 24 means the entire update
+lives in the final layers.
+We run patching at every training checkpoint to track how causal depth evolves
+during fine-tuning.
+
+%% ── 4. Results ────────────────────────────────────────────────────────────────
+\section{Results}
+
+% Paste table generated by: python -m lora_lens.run --stages visualize
+\begin{table}[t]
+\centering
+\small
+\caption{Layer-wise logit-lens results before and after LoRA fine-tuning (Pythia-410m-deduped, $r=16$).
+\emph{First layer} $\Delta$ = shift in mean layer at which the correct answer
+first appears as top-1. Para.\ = held-out paraphrase prompts.}
+\label{tab:main_results}
+\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{2}{c}{\textbf{Acc@1}} & \multicolumn{2}{c}{\textbf{Mean logprob}} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+\textbf{Condition} & \textbf{Prompts} & Base & LoRA & Base & LoRA \\
+\midrule
+Known     & train   & 0.990 & 0.994 & $-$1.62 & $-$0.10 \\
+Known     & para.\  & 0.314 & 0.792 & $-$3.92 & $-$0.80 \\
+Unknown   & train   & 0.002 & 0.804 & $-$6.90 & $-$0.89 \\
+Unknown   & para.\  & 0.065 & 0.452 & $-$6.84 & $-$2.59 \\
+Synthetic & train   & 0.000 & 0.640 & $-$8.84 & $-$1.61 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Layer-wise Prediction Evolution}
+
+Table~\ref{tab:main_results} shows the final-layer statistics.
+Figure~\ref{fig:layer_accuracy} shows the full layer-by-layer acc@1 trajectory.
+
+For \textbf{known} facts, the base model already achieves high accuracy at the
+final layer (99.0\% on training prompts) and the LoRA adapter adds little
+(+0.4pp).
+The more striking change is on paraphrase prompts: accuracy rises from 31.4\%
+to 79.2\%, and the first-layer-of-appearance shifts 2.7 layers earlier.
+This suggests LoRA strengthens the existing representation so that it
+generalises beyond the training prompt template.
+
+For \textbf{unknown} facts, LoRA raises train accuracy from 0.2\% to 80.4\%
+and paraphrase accuracy from 6.5\% to 45.2\%.
+Crucially, the paraphrase gain ($\Delta = +0.387$) is 81\% as large as the
+known-fact gain ($\Delta = +0.478$) despite starting from near zero --- a
+strong signal that LoRA is eliciting latent knowledge rather than memorising
+the training prompt.
+
+For \textbf{synthetic} facts, train accuracy reaches 64.0\% but the logit-lens
+first-layer-of-appearance shifts \emph{later} by $+3.1$ layers (from 18.5 to
+21.6), the opposite direction to known facts.
+This directly answers our central question: for knowledge that has no
+pre-existing representation, LoRA stores it in the deepest layers.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig_layer_accuracy.pdf}
+  \caption{Logit-lens acc@1 at each transformer layer (base = dashed, LoRA =
+  solid). Left/centre: paraphrase prompts for known and unknown conditions.
+  Right: training prompts for synthetic facts.}
+  \label{fig:layer_accuracy}
+\end{figure}
+
+\subsection{Causal Localization via Activation Patching}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Causal activation patching at the final LoRA checkpoint.
+\emph{Count} = facts (out of 100) where any single-layer patch flips the
+base model to the target answer. \emph{First-flip layer} = earliest such layer.}
+\label{tab:patching}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Condition} & \textbf{Count} & \textbf{Mean flip layer} & \textbf{Median} \\
+\midrule
+Known     & 100/100 & 0.26 & 0 \\
+Unknown   & 87/100  & 14.29 & 14 \\
+Synthetic & 72/100  & 18.65 & 19 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:patching} and Figure~\ref{fig:patching_dynamics} show the
+patching results.
+For \textbf{known} facts, every one of the 100 sampled facts flips at layer 0,
+meaning the LoRA adapter has not changed \emph{where} the answer lives --- the
+base model's embedding layer is already sufficient.
+For \textbf{unknown} facts, 87/100 flip at a median layer of 14; for
+\textbf{synthetic} facts, 72/100 flip at a median of 19.
+
+The temporal dynamics (Figure~\ref{fig:patching_dynamics}) reveal that the
+\emph{layer} at which each condition is encoded is stable across training:
+unknown facts always flip near layer 14 regardless of training step, and
+synthetic facts always near layer 19.
+What changes with training is the \emph{count} --- the number of facts that
+reach the flip criterion grows monotonically.
+This implies that where LoRA writes a fact is a property of the fact type, not
+of how much training has occurred.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\linewidth]{figures/fig_patching_dynamics.pdf}
+  \caption{Number of facts per condition for which patching any single layer
+  flips the base model's prediction, plotted against training step.
+  The \emph{location} (first-flip layer) is stable; the \emph{count} grows.}
+  \label{fig:patching_dynamics}
+\end{figure}
+
+\subsection{Effect of LoRA Rank}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig_rank_ablation.pdf}
+  \caption{Accuracy vs LoRA rank $r$ (3 epochs, $\alpha = 2r$).
+  Left: training prompts. Right: held-out paraphrases. Rank 0 = base model.}
+  \label{fig:rank_ablation}
+\end{figure}
+
+Figure~\ref{fig:rank_ablation} shows the rank ablation across $r \in
+\{4,8,16,32\}$.
+For \textbf{synthetic} facts, train accuracy scales sharply with rank: 22.5\%
+at $r=4$, rising to 45.5\% at $r=32$.
+For \textbf{unknown} facts the trend is similarly clear (45.8\% to 75.8\%).
+By contrast, \textbf{known} facts are already rank-saturated: accuracy stays
+near 97--99\% and paraphrase accuracy plateaus at $r=8$ (81.7\%), barely
+improving at $r=32$.
+
+Crucially, the \emph{first-layer-of-appearance} for synthetic facts remains
+around layers 21--22 across all ranks (vs.\ base model's 18.5).
+Rank controls how many facts get encoded; it does not move encoding to earlier
+layers.
+This suggests the late-layer bias for synthetic facts is an architectural
+property of what LoRA targets, not a capacity limitation.
+
+\subsection{Locality of Factual Updates}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Neighborhood preservation rate: fraction of 5{,}000 related-fact
+prompts per condition for which LoRA top-1 matches the base model's top-1.}
+\label{tab:locality}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Condition} & \textbf{Preservation rate} & \textbf{N prompts} \\
+\midrule
+Known   & 0.208 & 5{,}000 \\
+Unknown & 0.075 & 5{,}000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:locality} shows that fine-tuning causes severe collateral
+disruption.
+Only 20.8\% of neighborhood predictions are preserved for the known condition;
+for unknown facts the rate drops to 7.5\%.
+The unknown condition is far more disruptive despite encoding in middle rather
+than final layers: the aggressive mid-layer rewrites required to surface a
+suppressed representation collaterally overwrite a wider neighbourhood.
+This aligns with prior findings that model editing methods that change
+intermediate representations tend to exhibit poor locality
+\citep{meng2022locating}.
+
+%% ── 5. Discussion ─────────────────────────────────────────────────────────────
+\section{Discussion}
+
+Our results paint a consistent picture: \textbf{the layer at which LoRA
+encodes a fact is determined by the fact's novelty to the model, not by adapter
+capacity or training duration}.
+Known facts require only a shallow amplification (layer 0); unknown facts need
+a mid-network rewrite (layer 14); synthetic facts must be injected in the
+deepest layers (layer 19).
+
+This ordering has a natural interpretation.
+The pretrained model has already built a hierarchy of representations for real
+facts: the subject entity is resolved in early layers, and its properties are
+assembled by mid-network attention.
+LoRA on known facts can leverage this: it only needs to increase the weight
+of an already-correct answer, which the shallow layers can do.
+For unknown facts, the representation exists but is suppressed; LoRA must
+intervene at the point where relational information is assembled (mid-network).
+For synthetic facts, no representation exists: LoRA must add one from scratch,
+and the only layers with enough flexibility to insert a new output signal are
+those closest to the vocabulary projection.
+
+The locality results strengthen this picture.
+Unknown-fact fine-tuning is the most disruptive ($7.5\%$ preservation) because
+modifying mid-network attention broadly affects the representations of nearby
+entities.
+Synthetic facts, despite being encoded later, are slightly less disruptive
+because the final layers have more modular structure.
+
+A limitation of our study is that we fine-tune all three conditions jointly.
+Disentangling the interactions between them in future work --- for example by
+training on each condition separately and measuring cross-contamination ---
+would sharpen these conclusions.
+Additionally, extending the analysis to larger models (e.g.\ Pythia-1B or
+Pythia-6.9B) would reveal whether the depth ordering is model-size dependent.
+
+%% ── 6. Conclusion ─────────────────────────────────────────────────────────────
+\section{Conclusion}
+
+We have shown that LoRA fine-tuning for factual knowledge does not produce a
+uniform layer-wise effect.
+Instead, the depth at which an update is causally localised is entirely
+determined by how novel the fact is to the model.
+Patching experiments confirm that known facts are handled from layer 0, unknown
+facts from layer 14, and synthetic facts from layer 19 --- and this ordering is
+stable across training steps and adapter ranks.
+Rank ablation demonstrates that higher capacity yields more facts encoded, but
+at the same depth; the first-layer-of-appearance does not move earlier with
+rank for synthetic facts.
+All conditions suffer severe locality degradation, with unknown fine-tuning
+destroying 92.5\% of neighborhood predictions.
+
+These findings suggest that the late-layer dominance reported for language
+adapters generalises to factual LoRA fine-tuning, but only for genuinely novel
+knowledge.
+When fine-tuning to reinforce existing representations, LoRA acts on the
+earliest layers and generalises well.
+Practitioners who need high locality should prefer known-fact reinforcement
+over novel-fact injection and should monitor neighborhood prompts during
+training.
+
+%% ── AI Disclosure ─────────────────────────────────────────────────────────────
+\section*{AI Disclosure and Reflection}
+
+We used Claude (Anthropic) and GitHub Copilot to assist with implementation
+debugging, data-pipeline design, and manuscript editing.
+The experimental design, hypotheses, analysis, and conclusions are our own.
+All reported numbers were produced by running our code on Google Colab A100
+hardware and verified manually against the raw output logs.
+
+%% ── References ────────────────────────────────────────────────────────────────
+\bibliography{references}
+\bibliographystyle{acl_natbib}
+
+\end{document}

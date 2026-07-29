@@ -1,0 +1,152 @@
+Installing build dependencies ... done
+  Checking if build backend supports build_editable ... done
+  Getting requirements to build editable ... done
+  Preparing editable metadata (pyproject.toml) ... done
+  Building editable for lora-lens (pyproject.toml) ... done
+WARNING: Skipping torchao as it is not installed.
+GPU: NVIDIA A100-SXM4-40GB
+[run] model=EleutherAI/pythia-410m-deduped device=cuda output_dir=/content/outputs
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+config.json: 100% 570/570 [00:00<00:00, 3.75MB/s]
+tokenizer_config.json: 100% 396/396 [00:00<00:00, 2.51MB/s]
+tokenizer.json: 100% 2.11M/2.11M [00:00<00:00, 47.5MB/s]
+special_tokens_map.json: 100% 99.0/99.0 [00:00<00:00, 748kB/s]
+
+=== stage: prepare_data ===
+README.md: 100% 1.12k/1.12k [00:00<00:00, 3.75MB/s]
+
+data/train-00000-of-00001-05d11247db7abc(…): downloading bytes:  99% 11.0M/11.1M [00:01<00:00, 12.3MB/s, 31.7kB/s  ]
+data/train-00000-of-00001-05d11247db7abc(…): downloading bytes: 100% 11.0M/11.0M [00:01<00:00, 8.94MB/s, 1.07MB/s  ]
+data/train-00000-of-00001-05d11247db7abc(…): reconstructing file: 100% 11.1M/11.1M [00:01<00:00, 9.03MB/s, 1.08MB/s  ]
+
+data/test-00000-of-00001-bacb83500fca49a(…): downloading bytes:  49% 611k/1.25M [00:00<00:00, 1.09MB/s, 3.24kB/s  ]
+data/test-00000-of-00001-bacb83500fca49a(…): downloading bytes: 100% 1.24M/1.24M [00:00<00:00, 1.61MB/s,  122kB/s  ]
+data/test-00000-of-00001-bacb83500fca49a(…): reconstructing file: 100% 1.25M/1.25M [00:00<00:00, 1.62MB/s,  123kB/s  ]
+Generating train split: 100% 19728/19728 [00:00<00:00, 262891.08 examples/s]
+Generating test split: 100% 2191/2191 [00:00<00:00, 203065.30 examples/s]
+[data] 17606 facts kept, 2122 dropped (multi-token answer) out of 19728 records; 17606 have held-out paraphrases.
+[data] 200 synthetic facts over 34 relations.
+
+=== stage: score_base ===
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+model.safetensors: downloading bytes:   0% 0.00/911M [00:00<?, ?B/s]
+model.safetensors: downloading bytes:   3% 31.3M/911M [00:00<00:17, 49.3MB/s, 1.89MB/s  ]
+model.safetensors: downloading bytes:  12% 108M/911M [00:01<00:04, 169MB/s, 7.32MB/s  ] 
+model.safetensors: downloading bytes:  16% 142M/911M [00:01<00:04, 170MB/s, 11.9MB/s  ]
+model.safetensors: downloading bytes:  18% 163M/911M [00:01<00:06, 122MB/s, 14.4MB/s  ]
+model.safetensors: downloading bytes:  20% 186M/911M [00:02<00:06, 104MB/s, 16.0MB/s  ]
+model.safetensors: reconstructing file:  20% 183M/911M [00:02<00:07, 101MB/s, 16.3MB/s  ]
+model.safetensors: downloading bytes:  22% 204M/911M [00:02<00:09, 78.0MB/s, 17.5MB/s  ]
+model.safetensors: downloading bytes:  29% 269M/911M [00:02<00:05, 112MB/s, 20.6MB/s  ] 
+model.safetensors: downloading bytes:  33% 303M/911M [00:03<00:03, 154MB/s, 23.0MB/s  ]
+model.safetensors: downloading bytes:  40% 367M/911M [00:03<00:02, 219MB/s, 28.2MB/s  ]
+model.safetensors: downloading bytes:  46% 423M/911M [00:03<00:02, 171MB/s, 34.9MB/s  ]
+model.safetensors: downloading bytes:  52% 476M/911M [00:03<00:02, 209MB/s, 36.9MB/s  ]
+model.safetensors: downloading bytes:  59% 534M/911M [00:04<00:01, 244MB/s, 41.8MB/s  ]
+model.safetensors: downloading bytes:  64% 587M/911M [00:04<00:01, 320MB/s, 44.0MB/s  ]
+model.safetensors: downloading bytes:  70% 641M/911M [00:04<00:00, 299MB/s, 50.0MB/s  ]
+model.safetensors: downloading bytes:  78% 714M/911M [00:04<00:00, 327MB/s, 54.9MB/s  ]
+model.safetensors: reconstructing file:  74% 677M/911M [00:04<00:00, 287MB/s, 49.1MB/s  ]
+model.safetensors: downloading bytes:  85% 776M/911M [00:04<00:00, 321MB/s, 60.2MB/s  ]
+model.safetensors: downloading bytes: 100% 811M/811M [00:05<00:00, 152MB/s, 64.4MB/s  ]
+model.safetensors: reconstructing file: 100% 911M/911M [00:05<00:00, 171MB/s, 73.6MB/s  ]
+Loading weights: 100% 292/292 [00:00<00:00, 4456.62it/s]
+scoring: 100% 276/276 [00:10<00:00, 26.75it/s]
+
+[score] Known facts (base top-1 correct): 1232 / 17606
+[score] Known-set relation shares (top 5):
+relation
+P176    0.175325
+P103    0.146916
+P178    0.119318
+P27     0.103084
+P37     0.077922
+[score] Wrong-answer preview: 15% of wrong top-1 predictions are single-character/punctuation-like; most common:
+top_pred_token
+the    9552
+a      2015
+of     1017
+not     335
+to      253
+
+=== stage: build_conditions ===
+[conditions] known: 500 facts (29 relations)
+[conditions] unknown: 500 facts (34 relations)
+[conditions] synthetic: 200 facts (34 relations)
+
+=== stage: train_lora ===
+Loading weights: 100% 292/292 [00:00<00:00, 1878.97it/s]
+trainable params: 1,572,864 || all params: 406,906,880 || trainable%: 0.3865
+/content/drive/MyDrive/nlp-project/src/lora_lens/training.py:80: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+epoch 1/5: 100% 75/75 [00:06<00:00, 11.28it/s]
+epoch 2/5: 100% 75/75 [00:06<00:00, 11.24it/s]
+epoch 3/5: 100% 75/75 [00:06<00:00, 12.00it/s]
+epoch 4/5: 100% 75/75 [00:06<00:00, 11.56it/s]
+epoch 5/5: 100% 75/75 [00:06<00:00, 11.99it/s]
+[train] 375 steps, adapters in /content/outputs/lora
+
+=== stage: analyze ===
+[analyze] 3200 eval prompts (2000 held-out paraphrases)
+Loading weights: 100% 292/292 [00:00<00:00, 4767.96it/s]
+
+lens/EleutherAI/pythia-410m-deduped/para(…): downloading bytes:  88% 88.7M/101M [00:01<00:00, 108MB/s, 6.70MB/s  ] 
+lens/EleutherAI/pythia-410m-deduped/para(…): downloading bytes: 100% 95.9M/95.9M [00:01<00:00, 60.5MB/s, 9.07MB/s  ]
+lens/EleutherAI/pythia-410m-deduped/para(…): reconstructing file: 100% 101M/101M [00:01<00:00, 63.6MB/s, 9.70MB/s  ]
+config.json: 100% 180/180 [00:00<00:00, 982kB/s]
+[lens] tuned lens loaded for EleutherAI/pythia-410m-deduped
+lens[base]: 100% 100/100 [00:17<00:00,  5.82it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5857.04it/s]
+lens[step_00050]: 100% 100/100 [00:17<00:00,  5.66it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5240.59it/s]
+lens[step_00100]: 100% 100/100 [00:17<00:00,  5.69it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5769.44it/s]
+lens[step_00150]: 100% 100/100 [00:17<00:00,  5.68it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5227.80it/s]
+lens[step_00200]: 100% 100/100 [00:17<00:00,  5.66it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5616.15it/s]
+lens[step_00250]: 100% 100/100 [00:17<00:00,  5.66it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 4569.69it/s]
+lens[step_00300]: 100% 100/100 [00:17<00:00,  5.65it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5828.19it/s]
+lens[step_00350]: 100% 100/100 [00:17<00:00,  5.58it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5814.44it/s]
+lens[final]: 100% 100/100 [00:17<00:00,  5.66it/s]
+
+[analyze] Summary (final checkpoint + base):
+variant  step condition prompt_type  lens  final_accuracy  mean_final_logprob  mean_first_layer  frac_never_top1  n_prompts
+   base     0     known  paraphrase logit           0.314           -3.916903         20.450135            0.629       1000
+  final   375     known  paraphrase logit           0.792           -0.803424         19.250847            0.115       1000
+   base     0     known       train logit           0.990           -1.616868         21.209256            0.006        500
+  final   375     known       train logit           0.994           -0.101625         18.557114            0.002        500
+   base     0 synthetic       train logit           0.000           -8.839223         18.500000            0.990        200
+  final   375 synthetic       train logit           0.640           -1.607660         21.608696            0.310        200
+   base     0   unknown  paraphrase logit           0.065           -6.839160         20.252427            0.897       1000
+  final   375   unknown  paraphrase logit           0.452           -2.593103         20.062147            0.469       1000
+   base     0   unknown       train logit           0.002           -6.899986         19.437500            0.968        500
+  final   375   unknown       train logit           0.804           -0.892322         20.281324            0.154        500
+   base     0     known  paraphrase tuned           0.314           -3.916903         19.188264            0.591       1000
+  final   375     known  paraphrase tuned           0.792           -0.803424         18.513544            0.114       1000
+   base     0     known       train tuned           0.990           -1.616868         19.526000            0.000        500
+  final   375     known       train tuned           0.994           -0.101625         17.835671            0.002        500
+   base     0 synthetic       train tuned           0.000           -8.839223         22.500000            0.990        200
+  final   375 synthetic       train tuned           0.640           -1.607660         20.865248            0.295        200
+   base     0   unknown  paraphrase tuned           0.065           -6.839160         18.981982            0.889       1000
+  final   375   unknown  paraphrase tuned           0.452           -2.593103         19.482696            0.451       1000
+   base     0   unknown       train tuned           0.002           -6.899986         19.700000            0.940        500
+  final   375   unknown       train tuned           0.804           -0.892322         19.644550            0.156        500
+
+[analyze] Full results in /content/outputs/results
+
+=== stage: patch ===
+Loading weights: 100% 292/292 [00:00<00:00, 5783.47it/s]
+Loading weights: 100% 292/292 [00:00<00:00, 5152.86it/s]
+patching: 100% 19/19 [00:11<00:00,  1.59it/s]
+
+[patch] Earliest layer at which patching flips base -> answer:
+                mean  median  count
+condition                          
+known       0.260000     0.0    100
+synthetic  18.652778    19.0     72
+unknown    14.287356    14.0     87
