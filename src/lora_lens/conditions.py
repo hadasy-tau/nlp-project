@@ -52,10 +52,12 @@ def build_conditions(cfg, scored: pd.DataFrame, synthetic: pd.DataFrame) -> pd.D
     for name, pool in (("known", known), ("unknown", unknown), ("synthetic", synthetic)):
         sample = _stratified_sample(pool, n, max_frac, rng).copy()
         sample["condition"] = name
+        if "neighborhood_prompts" not in sample.columns:
+            sample["neighborhood_prompts"] = [[] for _ in range(len(sample))]
         parts.append(sample)
         print(f"[conditions] {name}: {len(sample)} facts "
               f"({sample['relation'].nunique()} relations)")
 
     cols = ["fact_id", "condition", "relation", "subject", "prompt", "paraphrases",
-            "answer", "answer_token_id"]
+            "neighborhood_prompts", "answer", "answer_token_id"]
     return pd.concat(parts, ignore_index=True)[cols]

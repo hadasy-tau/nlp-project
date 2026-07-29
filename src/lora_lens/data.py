@@ -96,6 +96,12 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
               "memorization. Use a dataset that ships paraphrases (e.g. azhx/counterfact).")
         para_path = None
 
+    neighbor_path = f.get("neighborhood")
+    if neighbor_path and _get_path(probe, neighbor_path) is _MISSING:
+        print(f"[data] WARNING: neighborhood field {neighbor_path!r} not found — "
+              "locality scoring will be skipped.")
+        neighbor_path = None
+
     false_path = f.get("target_false")
     has_false = bool(false_path) and _get_path(probe, false_path) is not _MISSING
 
@@ -112,12 +118,15 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
             continue
         paras = [_fix_mojibake(str(p).rstrip()) for p in (_get_path(rec, para_path) or [])] \
             if para_path else []
+        neighbors = [str(p).rstrip() for p in (_get_path(rec, neighbor_path) or [])] \
+            if neighbor_path else []
         rows.append({
             "fact_id": f"cf_{i}",
             "relation": str(_get_path(rec, f["relation"])),
             "subject": subject,
             "prompt": prompt,
             "paraphrases": paras,
+            "neighborhood_prompts": neighbors,
             "answer": answer,
             "answer_token_id": answer_ids[0],
             "target_false": str(_get_path(rec, false_path)).strip() if has_false else "",
@@ -171,6 +180,7 @@ def make_synthetic(real_df: pd.DataFrame, tokenizer, cfg) -> pd.DataFrame:
             "subject": name,
             "prompt": template.format(subject=name),
             "paraphrases": [],
+            "neighborhood_prompts": [],
             "answer": answer,
             "answer_token_id": answer_tok,
             "target_false": "",

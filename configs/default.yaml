@@ -28,6 +28,7 @@ data:
     target_false: requested_rewrite.target_new.str
     relation: requested_rewrite.relation_id
     paraphrases: paraphrase_prompts   # set null if the dataset has none
+    neighborhood: neighborhood_prompts        # for locality scoring; set null to skip
   # Decision rule from the handoff: need >= this many base-model-known facts,
   # otherwise move one model size up.
   min_known_facts: 300
@@ -72,3 +73,11 @@ patching:
   enabled: true
   batch_size: 16
   max_facts_per_condition: 100
+
+rank_ablation:
+  enabled: true
+  ranks: [4, 8, 16, 32]
+  # alpha = r * alpha_multiplier keeps the alpha/r ratio constant across ranks.
+  alpha_multiplier: 2
+  # Fewer epochs for ablation runs to keep wall-clock manageable.
+  epochs: 3

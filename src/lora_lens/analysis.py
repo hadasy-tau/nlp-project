@@ -83,6 +83,48 @@ def summarize(layerwise: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def report_highlights(summary: pd.DataFrame) -> None:
+    """Print the most actionable cross-condition comparison from the final checkpoint.
+
+    The key finding is whether 'unknown' (real facts the base model gets wrong) generalises
+    to paraphrases better than 'synthetic' (invented facts). A large gap there means LoRA
+    is eliciting latent knowledge rather than purely injecting new associations.
+    """
+    final = summary[summary["variant"] == "final"].copy()
+    base = summary[summary["variant"] == "base"].copy()
+    if final.empty or base.empty:
+        return
+
+    merge_keys = ["condition", "prompt_type", "lens"]
+    joined = final.merge(base[merge_keys + ["final_accuracy", "mean_first_layer"]],
+                         on=merge_keys, suffixes=("_final", "_base"))
+    joined["acc_gain"] = joined["final_accuracy_final"] - joined["final_accuracy_base"]
+    joined["layer_shift"] = joined["mean_first_layer_final"] - joined["mean_first_layer_base"]
+
+    print("\n[analyze] === Key findings (base → final, logit lens) ===")
+    logit = joined[joined["lens"] == "logit"].sort_values(["prompt_type", "condition"])
+    for _, row in logit.iterrows():
+        tag = f"{row['condition']:9s} / {row['prompt_type']:10s}"
+        acc_b = row["final_accuracy_base"]
+        acc_f = row["final_accuracy_final"]
+        gain = row["acc_gain"]
+        shift = row["layer_shift"]
+        print(f"  {tag}  acc {acc_b:.3f} → {acc_f:.3f}  (Δ={gain:+.3f})  "
+              f"first-layer shift {shift:+.1f}")
+
+    # Highlight the unknown vs synthetic paraphrase contrast.
+    para = logit[logit["prompt_type"] == "paraphrase"].set_index("condition")
+    if "unknown" in para.index and "synthetic" in para.index:
+        unk_gain = para.loc["unknown", "acc_gain"]
+        syn_gain = para.loc["synthetic", "acc_gain"]
+        ratio = unk_gain / syn_gain if syn_gain > 0 else float("inf")
+        print(f"\n  *** Paraphrase generalisation: unknown Δ={unk_gain:+.3f} vs "
+              f"synthetic Δ={syn_gain:+.3f} (ratio {ratio:.1f}x) ***")
+        if unk_gain > syn_gain * 2:
+            print("      → LoRA is primarily ELICITING latent knowledge for unknown facts,")
+            print("        not just memorising prompts (unlike synthetic).")
+
+
 def run_analysis(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
     results_dir = Path(cfg.output_dir) / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
@@ -125,4 +167,5 @@ def run_analysis(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
     print("\n[analyze] Summary (final checkpoint + base):")
     show = summary[summary["variant"].isin(["base", "final"])]
     print(show.to_string(index=False))
+    report_highlights(summary)
     print(f"\n[analyze] Full results in {results_dir}")

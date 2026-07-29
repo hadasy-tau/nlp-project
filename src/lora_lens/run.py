@@ -17,7 +17,8 @@ import pandas as pd
 from .config import load_config, save_config
 from .utils import load_model, load_tokenizer, resolve_device, set_seed, free_model
 
-STAGES = ["prepare_data", "score_base", "build_conditions", "train_lora", "analyze", "patch"]
+STAGES = ["prepare_data", "score_base", "build_conditions", "train_lora", "analyze",
+          "patch", "score_locality", "rank_ablation"]
 
 
 def _out(cfg) -> Path:
@@ -99,6 +100,20 @@ def stage_patch(cfg, tokenizer, device):
 
     conditions = pd.read_parquet(_out(cfg) / "conditions.parquet")
     run_patching(cfg, tokenizer, conditions, device)
+
+
+def stage_score_locality(cfg, tokenizer, device):
+    from .locality import run_locality_scoring
+
+    conditions = pd.read_parquet(_out(cfg) / "conditions.parquet")
+    run_locality_scoring(cfg, tokenizer, conditions, device)
+
+
+def stage_rank_ablation(cfg, tokenizer, device):
+    from .rank_ablation import run_rank_ablation
+
+    conditions = pd.read_parquet(_out(cfg) / "conditions.parquet")
+    run_rank_ablation(cfg, tokenizer, conditions, device)
 
 
 def main(argv=None):
