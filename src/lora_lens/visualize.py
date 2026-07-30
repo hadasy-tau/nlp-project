@@ -321,7 +321,7 @@ Para.\ = held-out paraphrase prompts.}
         p = p[(p["layer"] == -1) & (p["variant"] == "final")]
         pat = (p.groupby("condition")["first_flip_layer"]
                 .agg(mean="mean", median="median", count="count")
-                .reindex(["known", "unknown", "synthetic"]))
+                .reindex(COND_ORDER))
 
         print("\n% ── Table 2: Causal patching ──────────────────────────────────")
         print(r"""\begin{table}[t]
