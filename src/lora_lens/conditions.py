@@ -1,12 +1,17 @@
-"""Build the three experimental conditions with relation-stratified sampling.
+"""Build the four experimental conditions with relation-stratified sampling.
 
-known      — base model already answers correctly (does LoRA move it earlier?)
-unknown    — real fact the base model gets wrong (learning an unstored fact)
-synthetic  — pseudo-entity facts (pure injection, no prior signal)
+known      — base model answers correctly (rank 1); does LoRA move it earlier?
+latent     — real fact, base model has it in top 5 but not top 1 (rank 2-5);
+             the representation exists but is suppressed.
+unknown    — real fact, base model has no top-5 signal (rank > 5);
+             the model genuinely lacks the association.
+synthetic  — pseudo-entity facts (pure injection, no prior signal whatsoever).
 
-Paraphrase prompts are carried along but are NEVER used in training — they are the
-held-out generalization probes (pitfall 3: otherwise a late-layer shift may be
-prompt memorization rather than fact encoding).
+Splitting old 'unknown' into latent vs unknown lets us test whether depth of
+LoRA's update correlates with how absent the knowledge is: we expect
+known < latent < unknown < synthetic in causal first-flip layer.
+
+Paraphrase prompts are NEVER used in training.
 """
 
 from __future__ import annotations
@@ -45,11 +50,13 @@ def build_conditions(cfg, scored: pd.DataFrame, synthetic: pd.DataFrame) -> pd.D
     n = cfg.data.get("n_per_condition")
     max_frac = cfg.data.max_relation_fraction
 
-    known = scored[scored["top1_correct"]]
-    unknown = scored[~scored["top1_correct"]]
+    known   = scored[scored["top1_correct"]]
+    latent  = scored[scored["top5_correct"] & ~scored["top1_correct"]]
+    unknown = scored[~scored["top5_correct"]]
 
     parts = []
-    for name, pool in (("known", known), ("unknown", unknown), ("synthetic", synthetic)):
+    for name, pool in (("known", known), ("latent", latent),
+                       ("unknown", unknown), ("synthetic", synthetic)):
         sample = _stratified_sample(pool, n, max_frac, rng).copy()
         sample["condition"] = name
         if "neighborhood_prompts" not in sample.columns:

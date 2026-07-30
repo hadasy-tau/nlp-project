@@ -32,10 +32,12 @@ def score_prompts(model, tokenizer, prompts: list[str], answer_token_ids: list[i
         rank = (logprobs > ans_lp[:, None]).sum(dim=1) + 1
         top_id = logprobs.argmax(dim=-1)
         for j in range(len(chunk)):
+            r = int(rank[j].item())
             records.append({
                 "answer_logprob": ans_lp[j].item(),
-                "answer_rank": int(rank[j].item()),
-                "top1_correct": bool((top_id[j] == ans[j]).item()),
+                "answer_rank": r,
+                "top1_correct": r == 1,
+                "top5_correct": r <= 5,
                 "top_pred_token": tokenizer.decode(top_id[j]),
             })
     return pd.DataFrame(records)
@@ -49,8 +51,13 @@ def score_base_model(cfg, model, tokenizer, facts: pd.DataFrame, device) -> pd.D
     )
     out = pd.concat([facts.reset_index(drop=True), scored], axis=1)
 
-    n_known = int(out["top1_correct"].sum())
-    print(f"\n[score] Known facts (base top-1 correct): {n_known} / {len(out)}")
+    n_known  = int(out["top1_correct"].sum())
+    n_latent = int((out["top5_correct"] & ~out["top1_correct"]).sum())
+    n_unknown = int((~out["top5_correct"]).sum())
+    print(f"\n[score] Base-model fact breakdown (out of {len(out)}):")
+    print(f"  known  (rank=1):   {n_known}")
+    print(f"  latent (rank 2-5): {n_latent}")
+    print(f"  unknown (rank>5):  {n_unknown}")
 
     # Relation stratification report (pitfall 7): if the known set is dominated by
     # one relation, results describe that relation, not factual recall.

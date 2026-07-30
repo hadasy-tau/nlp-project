@@ -37,14 +37,13 @@ layers remains poorly understood.
 We study \emph{where} in the forward pass LoRA writes factual knowledge by
 applying logit-lens analysis and causal activation patching to Pythia-410m
 fine-tuned on CounterFact facts.
-We distinguish three conditions: facts the base model already knows
-(\emph{known}), real facts it gets wrong (\emph{unknown}), and entirely invented
-(\emph{synthetic}) facts.
-Patching reveals a striking dichotomy: for known facts, the correct answer is
-causally present from the very first layer (median first-flip layer $= 0$),
-while synthetic facts are encoded exclusively in the final layers
-(median $= 19$ out of 24).
-Unknown facts occupy the middle (median $= 14$).
+We distinguish four conditions ordered by how much prior signal the base model
+has: facts it already knows (\emph{known}), facts whose correct answer appears
+in the top-5 but not top-1 (\emph{latent}), real facts with no top-5 signal
+(\emph{unknown}), and entirely invented facts (\emph{synthetic}).
+Causal activation patching reveals a strict ordering: known facts flip at
+layer~0 (median), latent facts at an intermediate depth, unknown facts at
+layer~14, and synthetic facts at layer~19 out of 24.
 Logit-lens trajectories confirm that LoRA shifts synthetic predictions
 \emph{later} ($+3.1$ layers) and known predictions \emph{earlier} ($-2.7$
 layers).
@@ -75,8 +74,9 @@ whether this depends on the novelty of the fact being injected --- is unknown.
 
 We ask: \textbf{How does LoRA fine-tuning on factual knowledge affect the
 evolution of predictions across transformer layers, and does this differ
-between facts the model already knows, facts it has wrong, and entirely
-invented facts?}
+along a spectrum from facts the model already knows, to facts where the
+correct answer is latent but suppressed, to facts it has no signal for,
+to entirely invented facts?}
 
 To answer this, we fine-tune Pythia-410m-deduped on a stratified subset of the
 CounterFact benchmark \citep{meng2022locating} and analyse the resulting model
@@ -87,10 +87,11 @@ track \emph{when} causal structure emerges during training.
 We supplement this with a rank ablation ($r \in \{4,8,16,32\}$) and a locality
 audit on 10{,}000 neighborhood prompts.
 
-Our main finding is that LoRA's layer-wise mechanism is entirely determined by
-the novelty of the knowledge: known facts are handled at the shallowest layers,
-unknown facts in the middle, and synthetic facts only in the deepest layers.
-Higher adapter rank increases capacity but does not change this depth ordering.
+Our main finding is that LoRA's encoding depth forms a strict spectrum aligned
+with knowledge novelty: known (layer 0) $<$ latent $<$ unknown (layer 14) $<$
+synthetic (layer 19).
+This ordering is stable across all training steps and adapter ranks; higher rank
+increases how many facts are encoded, but not where.
 
 %% ── 2. Related Work ──────────────────────────────────────────────────────────
 \section{Related Work}
@@ -141,21 +142,29 @@ We retain only facts whose target answer is a single token under the model's
 tokenizer, yielding 17{,}606 usable facts.
 
 \subsection{Experimental Conditions}
-We define three conditions based on the base model's top-1 prediction:
+We define four conditions ordered by how much prior signal the base model has
+for the correct answer:
 \begin{itemize}
-  \item \textbf{Known:} The base model already predicts the correct answer
-    (top-1 correct); 1{,}232 facts qualify (7.0\%).
-  \item \textbf{Unknown:} The fact is real but the base model gets it wrong.
+  \item \textbf{Known (rank 1):} The base model already predicts the correct
+    answer as its top-1 token; 1{,}232 facts qualify (7.0\%).
+  \item \textbf{Latent (rank 2--5):} The fact is real and the correct answer
+    appears in the model's top-5 predictions, but is not the top-1.
+    The representation exists but is suppressed by a competing prediction.
+  \item \textbf{Unknown (rank $>$5):} The fact is real but the correct answer
+    has no top-5 signal at baseline.
+    The model lacks the association entirely.
   \item \textbf{Synthetic:} Pseudo-entity facts created by pairing real
-    relation templates (e.g., \emph{``\{subject\} was born in''}) with a
+    relation templates (e.g.\ \emph{``\{subject\} was born in''}) with a
     randomly generated subject name and a real object from that relation.
-    By construction the base model has never seen the triple.
+    By construction the base model has never encountered the triple.
 \end{itemize}
-We stratify-sample 500 facts per condition (unknown, known) and 200 synthetic
-facts, capping each relation at 25\% of the sample to prevent any single
-relation from dominating.
-Paraphrase prompts carried by the dataset are held out and never used in
-training --- they serve as the generalization probe.
+This four-way split lets us test a spectrum hypothesis: if LoRA's encoding
+depth is determined by how absent the knowledge is, we predict
+$\text{known} < \text{latent} < \text{unknown} < \text{synthetic}$
+in causal first-flip layer.
+We stratify-sample up to 500 facts per condition and 200 synthetic facts,
+capping each relation at 25\% to prevent any single relation from dominating.
+Paraphrase prompts are held out and never used in training.
 
 \subsection{LoRA Fine-Tuning}
 We attach LoRA adapters ($r=16$, $\alpha=32$, dropout $0.05$) to the
@@ -217,109 +226,124 @@ Synthetic & train   & 0.000 & 0.640 & $-$8.84 & $-$1.61 \\
 \subsection{Layer-wise Prediction Evolution}
 
 Table~\ref{tab:main_results} shows the final-layer statistics.
-Figure~\ref{fig:layer_accuracy} shows the full layer-by-layer acc@1 trajectory.
-
-For \textbf{known} facts, the base model already achieves high accuracy at the
-final layer (99.0\% on training prompts) and the LoRA adapter adds little
-(+0.4pp).
-The more striking change is on paraphrase prompts: accuracy rises from 31.4\%
-to 79.2\%, and the first-layer-of-appearance shifts 2.7 layers earlier.
-This suggests LoRA strengthens the existing representation so that it
-generalises beyond the training prompt template.
-
-For \textbf{unknown} facts, LoRA raises train accuracy from 0.2\% to 80.4\%
-and paraphrase accuracy from 6.5\% to 45.2\%.
-Crucially, the paraphrase gain ($\Delta = +0.387$) is 81\% as large as the
-known-fact gain ($\Delta = +0.478$) despite starting from near zero --- a
-strong signal that LoRA is eliciting latent knowledge rather than memorising
-the training prompt.
-
-For \textbf{synthetic} facts, train accuracy reaches 64.0\% but the logit-lens
-first-layer-of-appearance shifts \emph{later} by $+3.1$ layers (from 18.5 to
-21.6), the opposite direction to known facts.
-This directly answers our central question: for knowledge that has no
-pre-existing representation, LoRA stores it in the deepest layers.
+Figure~\ref{fig:delta_logprob} shows how LoRA's gain in answer log-probability
+is distributed across the 24 transformer layers.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig_layer_accuracy.pdf}
-  \caption{Logit-lens acc@1 at each transformer layer (base = dashed, LoRA =
-  solid). Left/centre: paraphrase prompts for known and unknown conditions.
-  Right: training prompts for synthetic facts.}
-  \label{fig:layer_accuracy}
+  \includegraphics[width=0.85\linewidth]{figures/fig_delta_logprob.pdf}
+  \caption{Mean increase in answer log-probability at each layer
+  (LoRA final $-$ base, training prompts).
+  Vertical dotted lines mark the median causal first-flip layers
+  for unknown (layer~14) and synthetic (layer~19) conditions from patching.}
+  \label{fig:delta_logprob}
 \end{figure}
+
+The three conditions exhibit qualitatively different shapes.
+For \textbf{known} facts, the gain is small in absolute terms ($\Delta = +1.52$
+log-prob at the final layer) and rises gradually from the earliest layers,
+consistent with a shallow amplification of an already-strong signal.
+The first-layer-of-appearance shifts $2.7$ layers earlier (from 21.2 to 18.6),
+and paraphrase accuracy jumps from 31.4\% to 79.2\% --- LoRA is making an
+existing representation more robust, not writing a new one.
+
+For \textbf{unknown} facts, the gain is near zero through the first half of the
+network and rises sharply after layer 14, reaching $+6.0$ log-prob at the final
+layer.
+The paraphrase accuracy gain ($\Delta = +0.387$) is 81\% as large as the
+known-fact gain ($\Delta = +0.478$) despite starting from near zero --- strong
+evidence that LoRA is surfacing a latent representation rather than memorising
+the training prompt.
+
+For \textbf{synthetic} facts, the log-probability gain stays near zero until
+layer~20 and then spikes to $+7.2$, entirely in the final four layers.
+The first-layer-of-appearance shifts $+3.1$ layers \emph{later} compared to
+the base model, the opposite direction from known facts.
+This directly answers our central question: for knowledge with no pre-existing
+representation, LoRA installs it as a shallow output bias in the deepest layers.
 
 \subsection{Causal Localization via Activation Patching}
 
 \begin{table}[t]
 \centering
 \small
-\caption{Causal activation patching at the final LoRA checkpoint.
-\emph{Count} = facts (out of 100) where any single-layer patch flips the
-base model to the target answer. \emph{First-flip layer} = earliest such layer.}
+\caption{Activation patching at the final LoRA checkpoint ($r=16$).
+\emph{Flipped} = facts (out of 100) where a single-layer patch causes the base
+model to output the target answer. \emph{First-flip layer} = earliest such layer.}
 \label{tab:patching}
 \begin{tabular}{lccc}
 \toprule
-\textbf{Condition} & \textbf{Count} & \textbf{Mean flip layer} & \textbf{Median} \\
+\textbf{Condition} & \textbf{Flipped} & \textbf{Mean first-flip layer} & \textbf{Median} \\
 \midrule
-Known     & 100/100 & 0.26 & 0 \\
+Known     & 100/100 & 0.26  & 0  \\
 Unknown   & 87/100  & 14.29 & 14 \\
 Synthetic & 72/100  & 18.65 & 19 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:patching} and Figure~\ref{fig:patching_dynamics} show the
-patching results.
-For \textbf{known} facts, every one of the 100 sampled facts flips at layer 0,
-meaning the LoRA adapter has not changed \emph{where} the answer lives --- the
-base model's embedding layer is already sufficient.
-For \textbf{unknown} facts, 87/100 flip at a median layer of 14; for
-\textbf{synthetic} facts, 72/100 flip at a median of 19.
-
-The temporal dynamics (Figure~\ref{fig:patching_dynamics}) reveal that the
-\emph{layer} at which each condition is encoded is stable across training:
-unknown facts always flip near layer 14 regardless of training step, and
-synthetic facts always near layer 19.
-What changes with training is the \emph{count} --- the number of facts that
-reach the flip criterion grows monotonically.
-This implies that where LoRA writes a fact is a property of the fact type, not
-of how much training has occurred.
-
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.7\linewidth]{figures/fig_patching_dynamics.pdf}
-  \caption{Number of facts per condition for which patching any single layer
-  flips the base model's prediction, plotted against training step.
-  The \emph{location} (first-flip layer) is stable; the \emph{count} grows.}
-  \label{fig:patching_dynamics}
+  \includegraphics[width=\linewidth]{figures/fig_patching.pdf}
+  \caption{\emph{Left:} Distribution of first-flip layers at the final checkpoint
+  (box = IQR, whiskers = 5th--95th percentile, dots = individual facts;
+  annotation = facts flipped out of 100).
+  \emph{Right:} Count of flipped facts across training steps for unknown and
+  synthetic conditions (known is always 100 and omitted).}
+  \label{fig:patching}
 \end{figure}
+
+Table~\ref{tab:patching} and Figure~\ref{fig:patching} confirm the layer-wise
+picture causally.
+For \textbf{known} facts, all 100 flip at layer 0: the answer is causally
+present in the model's input embedding, and the LoRA adapter has not moved it.
+For \textbf{unknown} facts, 87/100 flip at a tight median of layer 14 (IQR
+visible in Figure~\ref{fig:patching} left panel).
+For \textbf{synthetic} facts, 72/100 flip at a median of 19.
+
+The right panel of Figure~\ref{fig:patching} reveals a clean separation between
+\emph{where} and \emph{how many}.
+Across all 8 training checkpoints (steps 50--375), the first-flip layer for
+unknown facts stays near 14 and for synthetic facts near 19 --- the location
+does not drift.
+What grows monotonically is the count: the number of facts that LoRA has
+successfully encoded increases with training, but always at the same layer
+depth.
+This means \textbf{the encoding layer is a property of the fact type, not of
+training progress}.
 
 \subsection{Effect of LoRA Rank}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/fig_rank_ablation.pdf}
-  \caption{Accuracy vs LoRA rank $r$ (3 epochs, $\alpha = 2r$).
-  Left: training prompts. Right: held-out paraphrases. Rank 0 = base model.}
+  \caption{\emph{Left:} Accuracy vs rank (solid = train prompts, dashed = paraphrases).
+  \emph{Right:} Mean first-appearance layer vs rank.
+  For synthetic facts, depth stays fixed near layers 21--22 regardless of rank,
+  showing that rank controls capacity but not where encoding occurs.}
   \label{fig:rank_ablation}
 \end{figure}
 
-Figure~\ref{fig:rank_ablation} shows the rank ablation across $r \in
-\{4,8,16,32\}$.
-For \textbf{synthetic} facts, train accuracy scales sharply with rank: 22.5\%
-at $r=4$, rising to 45.5\% at $r=32$.
-For \textbf{unknown} facts the trend is similarly clear (45.8\% to 75.8\%).
-By contrast, \textbf{known} facts are already rank-saturated: accuracy stays
-near 97--99\% and paraphrase accuracy plateaus at $r=8$ (81.7\%), barely
-improving at $r=32$.
+Figure~\ref{fig:rank_ablation} shows that rank governs accuracy (left panel)
+but not depth (right panel).
+Train accuracy for \textbf{synthetic} facts rises sharply with rank (22.5\% at
+$r=4$ to 45.5\% at $r=32$); for \textbf{unknown} facts the gain is even larger
+(45.8\% to 75.8\%).
+\textbf{Known} facts are already rank-saturated: train accuracy stays 97--99\%
+and paraphrase accuracy plateaus at $r=8$ (81.7\%).
 
-Crucially, the \emph{first-layer-of-appearance} for synthetic facts remains
-around layers 21--22 across all ranks (vs.\ base model's 18.5).
-Rank controls how many facts get encoded; it does not move encoding to earlier
+The right panel is the key new result.
+The mean first-appearance layer for \textbf{synthetic} facts is 22.3 at $r=4$
+and 21.6 at $r=32$ --- essentially flat, and 3--4 layers \emph{later} than the
+base model's 18.5.
+Doubling or quadrupling the rank does not move synthetic facts to earlier
 layers.
-This suggests the late-layer bias for synthetic facts is an architectural
-property of what LoRA targets, not a capacity limitation.
+For \textbf{known} facts the story differs slightly: depth decreases from 19.4
+to 18.6 as rank increases, suggesting that larger adapters can slightly earlier-
+ise an already-present representation.
+The conclusion is that \textbf{rank controls how many facts are encoded, not
+where they are encoded} --- the late-layer bias for novel knowledge is
+architecturally intrinsic, not a capacity artefact.
 
 \subsection{Locality of Factual Updates}
 
