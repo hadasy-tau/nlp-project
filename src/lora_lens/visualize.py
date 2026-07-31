@@ -338,6 +338,8 @@ model to predict the target answer.}
             if cond not in pat.index:
                 continue
             r = pat.loc[cond]
+            if pd.isna(r["count"]):
+                continue
             print(f"{label} & {int(r['count'])}/100 & {r['mean']:.2f} & {r['median']:.0f} \\\\")
         print(r"""\bottomrule
 \end{tabular}
