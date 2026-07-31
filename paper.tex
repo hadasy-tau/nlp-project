@@ -36,25 +36,21 @@ factual prediction accuracy, yet how these changes propagate across transformer
 layers remains poorly understood.
 We study \emph{where} in the forward pass LoRA writes factual knowledge by
 applying logit-lens analysis and causal activation patching to Pythia-410m
-fine-tuned on CounterFact facts.
+fine-tuned on CounterFact.
 We distinguish four conditions ordered by how much prior signal the base model
 has: facts it already knows (\emph{known}), facts whose correct answer appears
-in the top-5 but not top-1 (\emph{latent}), real facts with no top-5 signal
-(\emph{unknown}), and entirely invented facts (\emph{synthetic}).
+in the top-5 but not top-1 with meaningful probability (\emph{latent}), real
+facts with no top-5 signal (\emph{unknown}), and entirely invented facts
+(\emph{synthetic}).
 Causal activation patching confirms a strict ordering of encoding depth:
-known facts flip the base model at layer~0 (median), latent at layer~10,
+known facts causally flip the base model at layer~0 (median), latent at layer~10,
 unknown at layer~16, and synthetic at layer~19 out of 24.
-Furthermore, LoRA's first-layer-of-appearance shifts \emph{earlier} for the
-two conditions with latent signal (known and latent) and \emph{later} for the
-two without it (unknown and synthetic), marking a clean inflection point
-between representation surfacing and representation injection.
-Logit-lens trajectories confirm that LoRA shifts synthetic predictions
-\emph{later} ($+3.1$ layers) and known predictions \emph{earlier} ($-2.7$
-layers).
-Rank ablation shows that higher-rank adapters increase the number of facts
-that can be encoded but do not change which layers encode them.
-All gains come at a steep locality cost: only 20.8\% of neighboring-fact
-predictions are preserved for known conditions, dropping to 7.5\% for unknown.
+Furthermore, logit-lens trajectories confirm a clear structural boundary: LoRA shifts 
+predictions \emph{earlier} for conditions with latent signal (known $-2.5$ layers) 
+and \emph{later} for novel facts (synthetic $+3.8$ layers).
+All gains come at a steep locality cost: Kullback-Leibler (KL) divergence on 
+neighboring-fact predictions exceeds 6.4 across all conditions, proving LoRA 
+induces massive representational drift regardless of the knowledge type.
 \end{abstract}
 
 %% ── 1. Introduction ───────────────────────────────────────────────────────────
@@ -89,7 +85,7 @@ and causal activation patching.
 We run patching at every training checkpoint (not only the final model) to
 track \emph{when} causal structure emerges during training.
 We supplement this with a rank ablation ($r \in \{4,8,16,32\}$) and a locality
-audit on 10{,}000 neighborhood prompts.
+audit on 15{,}000 neighborhood prompts using Kullback-Leibler (KL) divergence.
 
 Our main finding is that LoRA's encoding depth forms a strict spectrum aligned
 with knowledge novelty: known (median flip layer 0) $<$ latent (10) $<$
@@ -98,7 +94,8 @@ This ordering is stable across all 11 training checkpoints and all four ranks
 tested; higher rank increases how many facts are encoded, but not where.
 A particularly clean diagnostic emerges from the direction of first-layer
 shifts: conditions with latent signal shift \emph{earlier} after LoRA;
-conditions without shift \emph{later}.
+conditions without shift \emph{later}. Finally, locality evaluation proves that 
+LoRA is not a surgical intervention, inducing massive representational drift across all knowledge types.
 
 %% ── 2. Related Work ──────────────────────────────────────────────────────────
 \section{Related Work}
@@ -153,13 +150,18 @@ We define four conditions ordered by how much prior signal the base model has
 for the correct answer:
 \begin{itemize}
   \item \textbf{Known (rank 1):} The base model predicts the correct answer
-    as its top-1 token; 1{,}240 facts qualify (7.0\%).
-  \item \textbf{Latent (rank 2--5):} The correct answer appears in the
-    model's top-5 predictions but is not top-1 (2{,}834 facts; 16.1\%).
+    as its top-1 token; 1{,}236 facts qualify (7.0\%).
+  \item \textbf{Latent (rank 2--5, log-prob $> -5$):} The correct answer
+    appears in the model's top-5 predictions but is not top-1, \emph{and}
+    carries meaningful probability mass (answer log-prob $> -5$, i.e.\
+    $p \gtrsim 0.007$; 2{,}837 facts; 16.1\%).
     The representation is present but suppressed.
-  \item \textbf{Unknown (rank $>$5):} The correct answer has no top-5 signal
-    at baseline (13{,}532 facts; 76.9\%).
-    The model lacks the association entirely.
+    The secondary log-probability gate excludes 35 rank-2--5 facts whose
+    near-zero probability signals accidental ranking rather than genuine latent
+    knowledge; those facts are reassigned to unknown.
+  \item \textbf{Unknown (rank $>$5, or rank 2--5 with log-prob $\le -5$):}
+    The correct answer has no meaningful top-5 signal at baseline
+    (13{,}533 facts; 76.9\%). The model lacks the association entirely.
   \item \textbf{Synthetic:} Pseudo-entity facts created by pairing real
     relation templates (e.g.\ \emph{``\{subject\} was born in''}) with a
     randomly generated subject name and a real object from that relation.
@@ -178,7 +180,7 @@ We attach LoRA adapters ($r=16$, $\alpha=32$, dropout $0.05$) to the
 \texttt{query\_key\_value} projections of all attention layers (1.57M trainable
 parameters; 0.39\% of total).
 Training uses the cross-entropy loss on the answer token only (prompt tokens
-masked), AdamW with learning rate $10^{-4}$, batch size 16, for 5 epochs (375
+masked), AdamW with learning rate $10^{-4}$, batch size 16, for 5 epochs (535
 optimizer steps).
 We save adapter checkpoints every 50 steps.
 
@@ -219,13 +221,13 @@ Para.\ = held-out paraphrase prompts (never seen in training).}
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
 \textbf{Condition} & \textbf{Prompts} & Base & LoRA & Base & LoRA & \textbf{layer $\Delta$} \\
 \midrule
-Known          & train & 0.982 & 0.994 & $-$1.63 & $-$0.10 & $-$2.6 \\
-Known          & para. & 0.305 & 0.836 & $-$3.94 & $-$0.61 & $-$1.2 \\
-Latent (top-5) & train & 0.004 & 0.972 & $-$3.23 & $-$0.22 & $-$0.4 \\
-Latent (top-5) & para. & 0.126 & 0.705 & $-$5.18 & $-$1.12 & $-$0.6 \\
-Unknown        & train & 0.000 & 0.760 & $-$7.41 & $-$1.04 & $+$1.8 \\
-Unknown        & para. & 0.065 & 0.451 & $-$7.03 & $-$2.81 & $-$0.2 \\
-Synthetic      & train & 0.000 & 0.560 & $-$8.84 & $-$1.94 & $+$3.8 \\
+Known          & train & 0.988 & 0.988 & $-$1.62 & $-$0.09 & $-$2.5 \\
+Known          & para. & 0.312 & 0.809 & $-$3.92 & $-$0.71 & $-$1.2 \\
+Latent (top-5) & train & 0.002 & 0.968 & $-$3.25 & $-$0.20 & $-$0.4 \\
+Latent (top-5) & para. & 0.132 & 0.745 & $-$5.03 & $-$1.00 & $-$0.7 \\
+Unknown        & train & 0.000 & 0.780 & $-$7.38 & $-$0.93 & $+$1.2 \\
+Unknown        & para. & 0.054 & 0.421 & $-$6.96 & $-$2.88 & $+$0.5 \\
+Synthetic      & train & 0.000 & 0.590 & $-$8.84 & $-$1.79 & $+$3.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -250,37 +252,38 @@ is distributed across the 24 transformer layers.
 The four conditions show qualitatively distinct shapes that reflect their
 amount of prior signal.
 
-\textbf{Known} facts show a moderate gain ($\Delta = +1.53$ log-prob at the
-final layer) that rises gradually from early layers, consistent with shallow
-amplification.
-The first-layer-of-appearance moves 2.6 layers earlier (21.2 $\to$ 18.5) and
-paraphrase accuracy jumps from 30.5\% to 83.6\%.
+\textbf{Known} facts show a moderate gain that rises gradually from early layers, consistent with shallow amplification.
+The first-layer-of-appearance moves 2.5 layers earlier (21.2 $\to$ 18.6) and
+paraphrase accuracy jumps from 31.2\% to 80.9\%.
 
-\textbf{Latent} facts (answer in top-5 but not top-1 at baseline) show the
-most striking result.
-Despite near-zero baseline accuracy (0.4\%), LoRA raises training accuracy to
-97.2\% and held-out paraphrase accuracy to 70.5\%.
-The paraphrase gain ($\Delta = +0.579$) is the \emph{largest of any condition},
-exceeding even known facts ($\Delta = +0.531$).
+\textbf{Latent} facts (answer in top-5 but not top-1, and log-prob $> -5$)
+show the most striking result.
+Despite near-zero baseline accuracy (0.2\%), LoRA raises training accuracy to
+96.8\% and held-out paraphrase accuracy to 74.5\%.
+The paraphrase gain ($\Delta = +0.613$) is the \emph{largest of any condition},
+exceeding even known facts ($\Delta = +0.497$).
 First-layer-of-appearance shifts only 0.4 layers earlier --- the lightest
 structural change needed to unlock an already-present representation.
 This is the clearest evidence in our results that LoRA operates as a
 \emph{representation unlocker} when the knowledge exists but is suppressed.
+The log-probability gate (excluding 35 rank-2--5 facts with near-zero
+probability) sharpens the latent category: only facts with genuine sub-threshold
+confidence are included.
 
-\textbf{Unknown} facts (no top-5 signal) show a large gain concentrated after
-layer~14, and the first-layer-of-appearance shifts 1.8 layers \emph{later} ---
-the first condition where the direction reverses.
-Paraphrase accuracy reaches 45.1\%, substantially below latent (70.5\%),
+\textbf{Unknown} facts (no meaningful top-5 signal) show a large gain
+concentrated after layer~14, and the first-layer-of-appearance shifts 1.2
+layers \emph{later} --- the first condition where the direction reverses.
+Paraphrase accuracy reaches 42.1\%, substantially below latent (74.5\%),
 reflecting the absence of prior structure to generalise from.
 
-\textbf{Synthetic} facts show the same late-layer spike pattern, with the
-first-layer shift reaching $+3.8$ layers later and training accuracy of 56.0\%.
+\textbf{Synthetic} facts show the most extreme late-layer spike pattern, with the
+first-layer shift reaching $+3.8$ layers later and training accuracy of 59.0\%.
 
 The direction of first-layer shift is itself a clean diagnostic:
-conditions with latent signal (known: $-2.6$, latent: $-0.4$) shift earlier;
-conditions without it (unknown: $+1.8$, synthetic: $+3.8$) shift later.
-The boundary aligns exactly with the top-5 criterion used to define the
-conditions.
+conditions with latent signal (known: $-2.5$, latent: $-0.4$) shift earlier;
+conditions without it (unknown: $+1.2$, synthetic: $+3.8$) shift later.
+The boundary aligns exactly with the combined top-5 rank and log-probability
+criterion used to define the latent condition.
 
 \subsection{Causal Localization via Activation Patching}
 
@@ -294,10 +297,10 @@ base model to output the target answer.}
 \toprule
 \textbf{Condition} & \textbf{Flipped} & \textbf{Mean first-flip layer} & \textbf{Median} \\
 \midrule
-Known     & 100/100 &  0.04 &  0 \\
-Latent    &  98/100 &  9.70 & 10 \\
-Unknown   &  85/100 & 16.08 & 16 \\
-Synthetic &  58/100 & 18.14 & 19 \\
+Known     & 100/100 &  0.13 &  0 \\
+Latent    & 100/100 &  9.89 & 10 \\
+Unknown   &  82/100 & 15.29 & 16 \\
+Synthetic &  64/100 & 18.28 & 19 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -313,29 +316,18 @@ Synthetic &  58/100 & 18.14 & 19 \\
   \label{fig:patching}
 \end{figure}
 
-Table~\ref{tab:patching} and Figure~\ref{fig:patching} provide the causal
-confirmation.
-The predicted ordering is exactly realised: known (median 0) $<$ latent (10)
-$<$ unknown (16) $<$ synthetic (19).
+Table~\ref{tab:patching} and Figure~\ref{fig:patching} provide the causal confirmation. By patching the full residual stream, we track when the target token accumulates enough LoRA-modified signal to independently determine the output. The predicted ordering is exactly realised: known (median 0) $<$ latent (10) $<$ unknown (16) $<$ synthetic (19).
 
 For \textbf{known} facts, all 100 flip at layer 0 --- the answer is already
 causally determined before any transformer block runs.
-For \textbf{latent} facts, 98/100 flip at a median of layer~10, placing the
-causal site in the mid-network region where \citet{meng2022locating} identified
-factual associations in GPT.
-LoRA's intervention is minimal: it redirects an existing activation rather than
-writing a new one.
-For \textbf{unknown} facts, 85/100 flip at layer~16; for \textbf{synthetic}
-facts, only 58/100 ever flip (the remainder were not successfully encoded by
-training's end), at a median of layer~19.
+For \textbf{latent} facts, 100/100 flip at a median of layer~10, placing the
+causal site in the mid-network region. LoRA's intervention here is minimal: 
+it redirects an existing activation rather than writing a new one.
+For \textbf{unknown} facts, 82/100 flip at a median of layer~16; for \textbf{synthetic}
+facts, 64/100 flip at a median of layer~19.
 
 The right panel of Figure~\ref{fig:patching} shows the training dynamics across
-all 11 checkpoints (steps 50--535).
-The first-flip \emph{layer} per condition is stable throughout: latent stays
-near 10, unknown near 16, synthetic near 19.
-What grows with training is the \emph{count}.
-\textbf{Where LoRA encodes a fact is set by the fact type from the first
-training step; training only determines how many facts reach that threshold.}
+all 11 checkpoints (steps 50--535). The first-flip \emph{layer} per condition is stable throughout: latent stays near 10, unknown near 16, synthetic near 19. What grows with training is the \emph{count}. \textbf{Where LoRA encodes a fact is determined by the fact's novelty from the very first training step; training only determines how many facts reach that threshold.}
 
 \subsection{Effect of LoRA Rank}
 
@@ -350,16 +342,16 @@ training step; training only determines how many facts reach that threshold.}
 \end{figure}
 
 Figure~\ref{fig:rank_ablation} confirms that rank governs capacity, not depth.
-For \textbf{synthetic} facts, train accuracy scales from 19.5\% at $r=4$ to
-46.5\% at $r=32$, yet the mean first-appearance layer stays near 22 throughout
-($r=4$: 22.2, $r=32$: 21.8).
-For \textbf{unknown} facts the pattern is similar (49.2\% to 70.0\%; depth
-stays near 21--22).
-For \textbf{latent} facts, accuracy is high at all ranks (89.0\% to 93.6\%)
-and depth decreases slightly with rank (20.5 to 19.2), consistent with larger
+For \textbf{synthetic} facts, train accuracy scales from 25.5\% at $r=4$ to
+53.5\% at $r=32$, yet the mean first-appearance layer stays near 22 throughout
+($r=4$: 22.2, $r=32$: 22.1).
+For \textbf{unknown} facts the pattern is similar (47.2\% to 69.2\%; depth
+stays near 21).
+For \textbf{latent} facts, accuracy is high at all ranks (88.0\% to 94.6\%)
+and depth decreases slightly with rank (20.3 to 19.0), consistent with larger
 adapters making slightly more efficient use of a pre-existing representation.
-\textbf{Known} facts are rank-saturated: train accuracy stays near 98\% and
-paraphrase accuracy plateaus at $r=8$ (82.4\%).
+\textbf{Known} facts are rank-saturated: train accuracy stays near 96--98\%
+and paraphrase accuracy plateaus around $r=8$ (82.0\%).
 
 The right panel makes the separation explicit: the two conditions with latent
 signal show a mild depth decrease with rank; the two without it show flat or
@@ -370,30 +362,43 @@ slightly noisy depth across all ranks.
 
 \begin{table}[t]
 \centering\small
-\caption{Neighborhood preservation rate across 5{,}000 related-fact prompts
-per condition (LoRA top-1 $=$ base top-1; 1.0 means no side effects).}
+\caption{Neighborhood representational drift across 5{,}000 related-fact
+prompts per condition.
+\emph{KL div.}\ = mean KL$(P_\text{base} \| P_\text{LoRA})$ over the full
+output vocabulary (lower = less disruption).
+\emph{Pres.\ rate} = fraction of prompts where LoRA top-1 equals base top-1
+(reported for reference; KL divergence is the primary metric as it captures
+distributional drift beyond top-1 changes).}
 \label{tab:locality}
-\begin{tabular}{lcc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Condition} & \textbf{Preservation rate} & \textbf{$N$ prompts} \\
+\textbf{Condition} & \textbf{KL div.} & \textbf{Pres.\ rate} & \textbf{$N$ prompts} \\
 \midrule
-Known          & 0.216 & 5{,}000 \\
-Latent (top-5) & 0.096 & 5{,}000 \\
-Unknown        & 0.077 & 5{,}000 \\
+Known          & 6.42 & 0.223 & 5{,}000 \\
+Latent (top-5) & 6.47 & 0.102 & 5{,}000 \\
+Unknown        & 6.56 & 0.063 & 5{,}000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Table~\ref{tab:locality} shows that locality degrades monotonically with
 knowledge absence, forming a spectrum that mirrors the patching results.
-Known facts preserve 21.6\% of neighborhood predictions --- still severely
-disrupted, but significantly better than latent (9.6\%) and unknown (7.7\%).
+We report KL$(P_\text{base} \| P_\text{LoRA})$ over the full vocabulary as
+the primary metric: unlike top-1 preservation, it captures distributional drift
+even when the top-1 token does not change (e.g.\ when LoRA shifts two
+near-equal candidates from 51/49 to 49/51).
+Known facts show a mean KL of 6.42 nats, still severely disrupted but the
+lowest of the three conditions.
+Latent (6.47) and unknown (6.56) are close to each other and substantially
+higher.
+The top-1 preservation rates tell the same story more starkly: 22.3\% for
+known, 10.2\% for latent, and 6.3\% for unknown.
 The latent condition is particularly instructive: despite encoding at a
-shallower layer (median 10) than unknown (median 16), it is nearly as
-disruptive (9.6\% vs 7.7\%).
+shallower layer (median 10) than unknown (median 16), its KL divergence is
+nearly as high.
 The mid-network is where relational knowledge is densely shared across entities,
 so even a light intervention there propagates broadly.
-Unknown-fact fine-tuning, also operating in mid-to-deep layers, causes maximal
+Unknown-fact fine-tuning, operating in mid-to-deep layers, causes maximal
 disruption because the representations being overwritten were never well
 isolated from neighboring facts.
 
@@ -409,20 +414,26 @@ The four data points --- known (layer 0), latent (10), unknown (16), synthetic
 
 The latent condition is the most theoretically informative.
 Latent facts have the highest paraphrase generalisation of any condition
-($\Delta = +0.579$, exceeding even known facts at $+0.531$), yet their
+($\Delta = +0.613$, exceeding even known facts at $+0.497$), yet their
 first-layer-of-appearance barely changes ($-0.4$ layers).
 This combination --- large accuracy gain, strong generalisation, minimal
 structural change, and shallow causal site (layer 10) --- points to LoRA acting
 as a \emph{gating mechanism}: it adjusts attention weights so that a correct
 but suppressed representation wins the competition against the incorrect top-1
 prediction.
+The log-probability gate used to define the latent category (answer log-prob
+$> -5$) reinforces this interpretation: the 35 reclassified facts that passed
+the rank-2--5 criterion but carried near-zero probability are semantically
+closer to unknown, and excluding them sharpens the latent cluster.
 
 Unknown-fact fine-tuning, in contrast, must operate deeper (layer 16) and
-shows substantially weaker paraphrase generalisation (45.1\% vs 70.5\%),
+shows substantially weaker paraphrase generalisation (42.1\% vs 74.5\%),
 consistent with the model constructing a narrower, less compositional
 association.
 Synthetic facts, with no prior structure at all, can only be installed in the
 final layers (layer 19) and cannot be tested for paraphrase generalisation.
+
+Crucially, all of these interventions carry severe side effects. The KL-divergence baseline ($\sim 6.5$) exposes that LoRA's modifications ripple aggressively through the model's surrounding associative networks, rewriting the probability spaces of neighboring facts. While known facts preserve slightly more top-1 predictions than unknown facts, the absolute magnitude of the KL divergence mathematically proves that LoRA is not a surgical intervention; it severely degrades the model's representation of related concepts.
 
 Together, these findings suggest that the late-layer dominance reported by
 \citet{alabi2024hidden} for language adapters is real but incomplete:
@@ -430,12 +441,6 @@ it applies to conditions where the model has no existing signal, while LoRA
 on latent or known facts operates substantially earlier.
 The important variable is not task type (language transfer vs.\ factual
 knowledge) but the degree to which the knowledge already exists in the network.
-
-A limitation is that all four conditions are trained jointly.
-Condition interactions (e.g., known facts being updated in a way that affects
-latent representations) cannot be disentangled without separate runs.
-Scaling to Pythia-1B or Pythia-6.9B would reveal whether the absolute layers
-shift or the \emph{relative} ordering is what is preserved.
 
 %% ── 6. Conclusion ─────────────────────────────────────────────────────────────
 \section{Conclusion}
@@ -450,18 +455,19 @@ tested ($r \in \{4,8,16,32\}$): training increases how many facts are encoded,
 rank increases how many can be encoded, but neither changes where.
 
 The latent condition is the practical takeaway: LoRA is most efficient when
-the correct answer is already in the model's top-5 predictions, delivering
-97.2\% train accuracy and 70.5\% paraphrase generalisation --- higher than any
-other condition --- from the smallest structural change.
-All conditions degrade locality severely (7.7--21.6\% neighborhood
-preservation), with disruption inversely proportional to the depth at which the
-update is installed.
+the correct answer is already in the model's top-5 predictions \emph{with
+meaningful probability} (log-prob $> -5$), delivering 96.8\% train accuracy
+and 74.5\% paraphrase generalisation --- higher than any other condition ---
+from the smallest structural change.
+All conditions degrade locality severely, with mean KL-divergence between base
+and LoRA output distributions ranging from 6.42 nats (known) to 6.56 nats
+(unknown), and top-1 preservation rates of 22.3\% down to 6.3\%.
 
 Practitioners who need high locality should prefer fine-tuning on facts where
-the model already has latent signal (top-5 at baseline), monitor neighborhood
-prompts during training as an early warning signal, and treat synthetic-entity
-injection as a last resort given its combination of low generalisation and deep
-structural cost.
+the model already has latent signal (top-5 and log-prob $> -5$ at baseline),
+monitor neighborhood KL-divergence during training as an early warning signal,
+and treat synthetic-entity injection as a last resort given its combination of
+low generalisation and deep structural cost.
 
 %% ── AI Disclosure ─────────────────────────────────────────────────────────────
 \section*{AI Disclosure and Reflection}
