@@ -50,9 +50,23 @@ def build_conditions(cfg, scored: pd.DataFrame, synthetic: pd.DataFrame) -> pd.D
     n = cfg.data.get("n_per_condition")
     max_frac = cfg.data.max_relation_fraction
 
-    known   = scored[scored["top1_correct"]]
-    latent  = scored[scored["top5_correct"] & ~scored["top1_correct"]]
-    unknown = scored[~scored["top5_correct"]]
+    # Log-prob secondary gate for the latent bucket: rank 2-5 facts with near-zero
+    # probability on the correct answer are not meaningfully "latent" — the signal is
+    # there only by rank ordering noise, not genuine sub-threshold confidence.
+    # Facts that pass the rank gate but fail the logprob gate are reclassified to unknown.
+    # Configurable via data.latent_logprob_threshold (default -5.0, i.e. p ≈ 0.0067).
+    latent_threshold = cfg.data.get("latent_logprob_threshold", -5.0)
+
+    known     = scored[scored["top1_correct"]]
+    in_top5   = scored["top5_correct"] & ~scored["top1_correct"]
+    has_signal = in_top5 & (scored["answer_logprob"] > latent_threshold)
+    latent    = scored[has_signal]
+    unknown   = scored[~scored["top1_correct"] & ~has_signal]
+
+    reclassified = int((in_top5 & ~has_signal).sum())
+    if reclassified:
+        print(f"[conditions] {reclassified} rank-2-5 facts reclassified to unknown "
+              f"(answer_logprob <= {latent_threshold})")
 
     parts = []
     for name, pool in (("known", known), ("latent", latent),

@@ -25,14 +25,43 @@ from .training import list_checkpoints
 from .utils import batched, free_model, gather_last, load_model
 
 
+def _subject_last_token_positions(tokenizer, prompts: list[str], subjects: list[str]) -> list[int]:
+    """Return the 0-indexed position of each subject's last token in its tokenized prompt.
+
+    Falls back to -1 when the subject string is not found in the prompt; the caller
+    treats -1 as "no patch at this example" (keeps base model's hidden state unchanged).
+    Right-padded batches preserve token positions, so these indices are valid as-is.
+    """
+    positions = []
+    for prompt, subject in zip(prompts, subjects):
+        start = prompt.find(subject)
+        if start == -1:
+            positions.append(-1)
+            continue
+        prefix = prompt[: start + len(subject)]
+        ids = tokenizer(prefix)["input_ids"]
+        positions.append(len(ids) - 1 if ids else -1)
+    return positions
+
+
 @torch.no_grad()
-def _patched_top1(base_model, enc, replacement: torch.Tensor, layer_module) -> torch.Tensor:
-    """Run base_model with layer_module's output hidden states replaced; return top-1 ids."""
+def _patched_top1(base_model, enc, lora_hidden_layer: torch.Tensor,
+                  layer_module, patch_positions: list[int]) -> torch.Tensor:
+    """Run base_model replacing the hidden state only at each subject's last token.
+
+    For each example b in the batch, position patch_positions[b] in the residual
+    stream is overwritten with the corresponding LoRA hidden state. Positions of -1
+    are skipped (base model's own activations are kept for that example).
+    """
 
     def hook(_module, _inputs, output):
+        h = output[0].clone() if isinstance(output, tuple) else output.clone()
+        for b, pos in enumerate(patch_positions):
+            if pos >= 0:
+                h[b, pos] = lora_hidden_layer[b, pos]
         if isinstance(output, tuple):
-            return (replacement,) + output[1:]
-        return replacement
+            return (h,) + output[1:]
+        return h
 
     handle = layer_module.register_forward_hook(hook)
     try:
@@ -54,16 +83,20 @@ def _patch_one_checkpoint(base_model, lora_model, base_layers, n_layers,
         enc = tokenizer(sub["prompt"].tolist(), return_tensors="pt", padding=True).to(device)
         ans = torch.tensor(sub["answer_token_id"].tolist(), device=device)
 
+        patch_positions = _subject_last_token_positions(
+            tokenizer, sub["prompt"].tolist(), sub["subject"].tolist())
+
         lora_hidden = lora_model(**enc, output_hidden_states=True).hidden_states
         base_top1 = gather_last(base_model(**enc).logits, enc["attention_mask"]) \
             .float().argmax(dim=-1)
 
-        # Patch residual stream after layer l (lora_hidden[l] = output of block l-1).
+        # Patch residual stream after layer l at each subject's last token position.
         # l=0: no patch (base as-is); l=1..n_layers: patch output of base block l-1.
         flips = torch.zeros((len(sub), n_layers + 1), dtype=torch.bool)
         flips[:, 0] = (base_top1 == ans).cpu()
         for layer in range(1, n_layers + 1):
-            top1 = _patched_top1(base_model, enc, lora_hidden[layer], base_layers[layer - 1])
+            top1 = _patched_top1(base_model, enc, lora_hidden[layer],
+                                  base_layers[layer - 1], patch_positions)
             flips[:, layer] = (top1 == ans).cpu()
 
         for j in range(len(sub)):

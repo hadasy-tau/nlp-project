@@ -1,10 +1,12 @@
 """Locality scoring: measure how much LoRA disrupts base-model predictions on
 neighborhood prompts.
 
-For each neighborhood prompt (a related but distinct fact from CounterFact), we
-record the base model's top-1 token, then check whether the final LoRA adapter
-predicts the same token. The preservation rate = fraction of prompts where the
-two agree. Low preservation means LoRA has side-effects beyond the trained facts.
+Primary metric: KL(base || lora) over the full output vocabulary — measures
+representational drift regardless of whether top-1 flips. Lower is better.
+
+Secondary metric: top-1 preservation rate (kept for reference / backward compat).
+KL is the preferred metric because exact top-1 match fails spuriously when the
+base model's top-two tokens are near 50/50 and LoRA merely swaps their order.
 
 Output: <output_dir>/results/locality.csv
 """
@@ -15,6 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch
+import torch.nn.functional as F
 from tqdm import tqdm
 
 from .utils import batched, free_model, gather_last, load_model
@@ -51,7 +54,7 @@ def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> No
     lora_model = load_model(cfg, device=device, adapter_path=adapter)
 
     idx = list(range(len(expanded)))
-    base_top1s, lora_top1s = [], []
+    base_top1s, lora_top1s, kl_divs = [], [], []
 
     for chunk in tqdm(list(batched(idx, cfg.scoring.batch_size)), desc="locality"):
         sub = expanded.iloc[chunk]
@@ -62,8 +65,16 @@ def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> No
                 base_model(**enc).logits, enc["attention_mask"]).float()
             lora_logits = gather_last(
                 lora_model(**enc).logits, enc["attention_mask"]).float()
-        base_top1s.append(base_logits.argmax(dim=-1).cpu())
-        lora_top1s.append(lora_logits.argmax(dim=-1).cpu())
+
+        base_logprobs = F.log_softmax(base_logits, dim=-1)
+        lora_logprobs = F.log_softmax(lora_logits, dim=-1)
+        # KL(base || lora) per example using log-space target for numerical stability.
+        kl = F.kl_div(lora_logprobs, base_logprobs, reduction="none",
+                      log_target=True).sum(dim=-1)
+
+        base_top1s.append(base_logprobs.argmax(dim=-1).cpu())
+        lora_top1s.append(lora_logprobs.argmax(dim=-1).cpu())
+        kl_divs.append(kl.cpu())
 
     free_model(lora_model)
     free_model(base_model)
@@ -72,12 +83,15 @@ def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> No
     expanded["base_top1"] = torch.cat(base_top1s).numpy()
     expanded["lora_top1"] = torch.cat(lora_top1s).numpy()
     expanded["preserved"] = expanded["base_top1"] == expanded["lora_top1"]
+    expanded["kl_div"] = torch.cat(kl_divs).numpy()
 
     expanded.to_csv(results_dir / "locality.csv", index=False)
 
-    summary = (expanded.groupby("condition")["preserved"]
-               .agg(preservation_rate="mean", n_prompts="count")
+    summary = (expanded.groupby("condition")
+               .agg(kl_div_mean=("kl_div", "mean"),
+                    preservation_rate=("preserved", "mean"),
+                    n_prompts=("preserved", "count"))
                .reset_index())
-    print("\n[locality] Neighborhood preservation rate (LoRA top-1 == base top-1):")
+    print("\n[locality] Neighborhood representational drift (KL(base||lora), lower = less disruption):")
     print(summary.to_string(index=False))
-    print("           (1.0 = no side-effects on related facts; lower = more disruption)")
+    print("           kl_div_mean: primary metric; preservation_rate: legacy top-1 match")
