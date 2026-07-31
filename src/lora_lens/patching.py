@@ -90,7 +90,11 @@ def run_patching(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
         raise SystemExit("[patch] No trained adapters found — run train_lora first.")
 
     cap = cfg.patching.max_facts_per_condition
-    sample = (conditions.groupby("condition", group_keys=False)
+    # "known" is excluded: the base model already predicts correctly for these
+    # facts, so any LoRA patch trivially preserves the correct answer — the
+    # result reflects the selection criterion, not LoRA's causal footprint.
+    patchable = conditions[conditions["condition"] != "known"]
+    sample = (patchable.groupby("condition", group_keys=False)
               .apply(lambda g: g.head(cap)).reset_index(drop=True))
 
     log_path = Path(cfg.output_dir) / "lora" / "training_log.csv"

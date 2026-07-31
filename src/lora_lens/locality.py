@@ -1,12 +1,16 @@
 """Locality scoring: measure how much LoRA disrupts base-model predictions on
 neighborhood prompts.
 
-Primary metric: KL(base || lora) over the full output vocabulary — measures
-representational drift regardless of whether top-1 flips. Lower is better.
+Primary metric: KL(base || lora) restricted to the top-k tokens under the base
+distribution (default k=50, configurable via scoring.locality_topk). Both
+distributions are renormalized over the top-k support before computing KL, so
+the result is a proper KL between two distributions over the same k-token
+vocabulary. This avoids the full-vocabulary explosion caused by summing tiny
+shifts across 50k long-tail tokens while preserving sensitivity to meaningful
+distributional drift in the high-probability region. Lower is better.
 
-Secondary metric: top-1 preservation rate (kept for reference / backward compat).
-KL is the preferred metric because exact top-1 match fails spuriously when the
-base model's top-two tokens are near 50/50 and LoRA merely swaps their order.
+Secondary metric: top-1 preservation rate (fraction of prompts where LoRA and
+base agree on top-1 token).
 
 Output: <output_dir>/results/locality.csv
 """
@@ -21,6 +25,21 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 from .utils import batched, free_model, gather_last, load_model
+
+
+def _topk_kl(base_logprobs: torch.Tensor, lora_logprobs: torch.Tensor, k: int) -> torch.Tensor:
+    """KL(base || lora) over the top-k tokens under the base distribution.
+
+    Both log-prob vectors are sliced to the top-k base indices and renormalized
+    over that support before computing KL, yielding a valid probability-simplex
+    comparison on the tokens that carry the bulk of the base model's probability
+    mass.
+    """
+    topk_vals, topk_idx = base_logprobs.topk(k, dim=-1)            # [B, k]
+    lora_topk = lora_logprobs.gather(1, topk_idx)                   # [B, k]
+    base_topk = topk_vals - torch.logsumexp(topk_vals, dim=-1, keepdim=True)
+    lora_topk = lora_topk - torch.logsumexp(lora_topk, dim=-1, keepdim=True)
+    return F.kl_div(lora_topk, base_topk, reduction="none", log_target=True).sum(dim=-1)
 
 
 def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
@@ -68,9 +87,8 @@ def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> No
 
         base_logprobs = F.log_softmax(base_logits, dim=-1)
         lora_logprobs = F.log_softmax(lora_logits, dim=-1)
-        # KL(base || lora) per example using log-space target for numerical stability.
-        kl = F.kl_div(lora_logprobs, base_logprobs, reduction="none",
-                      log_target=True).sum(dim=-1)
+        topk = cfg.scoring.get("locality_topk", 50)
+        kl = _topk_kl(base_logprobs, lora_logprobs, k=topk)
 
         base_top1s.append(base_logprobs.argmax(dim=-1).cpu())
         lora_top1s.append(lora_logprobs.argmax(dim=-1).cpu())
@@ -92,6 +110,7 @@ def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> No
                     preservation_rate=("preserved", "mean"),
                     n_prompts=("preserved", "count"))
                .reset_index())
-    print("\n[locality] Neighborhood representational drift (KL(base||lora), lower = less disruption):")
+    topk = cfg.scoring.get("locality_topk", 50)
+    print(f"\n[locality] Neighborhood drift (top-{topk} KL(base||lora), lower = less disruption):")
     print(summary.to_string(index=False))
-    print("           kl_div_mean: primary metric; preservation_rate: legacy top-1 match")
+    print("           kl_div_mean: top-k KL (primary); preservation_rate: top-1 match")
