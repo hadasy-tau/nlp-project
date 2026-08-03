@@ -60,3 +60,4 @@ patching:
   enabled: true
   batch_size: 8
   max_facts_per_condition: 20
+  controls: true

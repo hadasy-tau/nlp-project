@@ -86,7 +86,7 @@ def build_conditions(cfg, scored: pd.DataFrame, synthetic: pd.DataFrame) -> pd.D
     # reproduce the first bit-for-bit (it doesn't always — see analysis.py).
     # NaN for synthetic facts, which were never scored by the base model.
     combined = pd.concat(parts, ignore_index=True)
-    for c in ("answer_rank", "answer_logprob"):
+    for c in ("answer_rank", "answer_logprob", "target_false_token_id"):
         if c not in combined.columns:
             combined[c] = float("nan")
     combined = combined.rename(columns={"answer_rank": "base_answer_rank",
@@ -94,5 +94,5 @@ def build_conditions(cfg, scored: pd.DataFrame, synthetic: pd.DataFrame) -> pd.D
 
     cols = ["fact_id", "condition", "relation", "subject", "prompt", "paraphrases",
             "neighborhood_prompts", "answer", "answer_token_id",
-            "base_answer_rank", "base_answer_logprob"]
+            "base_answer_rank", "base_answer_logprob", "target_false_token_id"]
     return combined[cols]

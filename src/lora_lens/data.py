@@ -249,6 +249,10 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
         paras = [_fill_subject(t, subject) for t in paraphrase_templates]
         neighbors = [str(p).rstrip() for p in (_get_path(rec, neighbor_path) or [])] \
             if neighbor_path else []
+        target_false = _fix_mojibake(str(_get_path(rec, false_path)).strip()) if has_false else ""
+        # Single-token only, like the true answer; NaN lets patching fall back to a
+        # per-layer best-competing-token contrast instead (see patching.py).
+        false_ids = encode_answer(tokenizer, target_false) if target_false else []
         rows.append({
             "fact_id": f"cf_{i}",
             "relation": relation,
@@ -258,7 +262,8 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
             "neighborhood_prompts": neighbors,
             "answer": answer,
             "answer_token_id": answer_ids[0],
-            "target_false": str(_get_path(rec, false_path)).strip() if has_false else "",
+            "target_false": target_false,
+            "target_false_token_id": false_ids[0] if len(false_ids) == 1 else float("nan"),
         })
 
     df = pd.DataFrame(rows)
@@ -358,6 +363,11 @@ def make_synthetic(real_df: pd.DataFrame, tokenizer, cfg) -> pd.DataFrame:
         global_object_counts[answer] += 1
         pair_counts[(template, answer)] += 1
 
+        # A same-relation real object already IS single-token (real_df was filtered
+        # to those), so this needs no separate tokenization check.
+        other_objects = [o for o in entry["objects"] if o[1] != answer_tok]
+        false_answer, false_tok = rng.choice(other_objects) if other_objects else ("", float("nan"))
+
         name, n_tokens, total_syllable_slots = _pseudo_name(
             rng, tokenizer, (token_lo, token_hi), syllable_counts,
             total_syllable_slots, syllable_tolerance, seen_names)
@@ -381,7 +391,8 @@ def make_synthetic(real_df: pd.DataFrame, tokenizer, cfg) -> pd.DataFrame:
             "neighborhood_prompts": [],
             "answer": answer,
             "answer_token_id": answer_tok,
-            "target_false": "",
+            "target_false": false_answer,
+            "target_false_token_id": false_tok,
         })
 
     df = pd.DataFrame(rows)

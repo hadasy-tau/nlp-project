@@ -94,6 +94,8 @@ patching:
   enabled: true
   batch_size: 16
   max_facts_per_condition: 100
+  # Self and mismatched-donor specificity controls, at the final checkpoint only.
+  controls: true
 
 rank_ablation:
   enabled: true
