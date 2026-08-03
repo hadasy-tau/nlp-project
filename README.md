@@ -32,6 +32,9 @@ analyze           layer-wise lens metrics for base + every checkpoint
                   (train prompts + held-out paraphrases)
 patch             activation patching: earliest layer whose patched stream flips
                   the base model to the learned answer
+trajectory        per-fact settle layer + trajectory class (never/transient/
+                  late_only/persistent), base->final transitions, and settle
+                  depth regressed on continuous baseline log-prob
 stats             bootstrap CIs, Mann-Whitney/Fisher/Wilcoxon significance tests
                   on the patching + layer-wise outputs (no new experiments)
 score_locality    KL divergence + ground-truth correctness on neighborhood
