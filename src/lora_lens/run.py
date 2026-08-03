@@ -70,8 +70,7 @@ def stage_score_base(cfg, tokenizer, device):
     from .scoring import score_base_model
 
     facts = pd.read_parquet(_out(cfg) / "facts.parquet")
-    # Critical pass: this is what defines known/latent/unknown, and analyze asserts
-    # it can be reproduced exactly (see analysis.py:_check_base_final_layer).
+    # Critical pass: defines known/latent/unknown, and analyze asserts against it.
     model = load_model(cfg, device=device, dtype=measurement_dtype(cfg, critical=True))
     scored = score_base_model(cfg, model, tokenizer, facts, device)
     free_model(model)
@@ -146,10 +145,10 @@ def main(argv=None):
                     metavar="KEY=VALUE", help="Dotted config override, repeatable")
     args = ap.parse_args(argv)
 
-    configure_stdout()   # cp1252 consoles must not be able to kill a finished stage
+    configure_stdout()
     cfg = load_config(args.config, tuple(args.overrides))
     set_seed(cfg.seed)
-    disable_tf32()   # keep fp32 measurement passes in real fp32 on Ampere+ (see utils.py)
+    disable_tf32()
     device = resolve_device(cfg)
     print(f"[run] model={cfg.model.name} device={device} output_dir={cfg.output_dir}")
     print(f"[run] measurement dtype={measurement_dtype(cfg)} "

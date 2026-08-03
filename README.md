@@ -103,13 +103,9 @@ Use [kaggle/kaggle_pipeline.ipynb](kaggle/kaggle_pipeline.ipynb). Enable a GPU
 
 - Output goes to `/kaggle/working/outputs` (persisted; download `results/`).
 - **Never bf16** — Kaggle's T4 (compute 7.5) and P100 (6.0) do not support it.
-- Measurement passes default to **fp32** (`model.inference_dtype`), because fp16
-  rank ties silently corrupt the condition split and every first-layer-of-appearance
-  (see "Measurement precision" below). T4/P100 have no fast fp32 path, so on Kaggle
-  set `model.inference_dtype=float16` **and** `model.scoring_dtype=float32` to keep
-  the split reproducible while the bulk passes stay fast, plus
-  `analysis.allow_reconcile=true` to accept the resulting base/LoRA precision
-  asymmetry. Disclose that asymmetry if you report those numbers.
+- Measurement passes default to **fp32**. T4/P100 have no fast fp32 path, so on
+  Kaggle set `model.inference_dtype=float16`, `model.scoring_dtype=float32` and
+  `analysis.allow_reconcile=true`, and disclose the base/LoRA precision asymmetry.
 - The whole 410m run fits comfortably in a single session (LoRA on ~1.5k short
   prompts is minutes on a T4; analysis is the longer part). Use *Save & Run All*
   for free background execution.
@@ -157,15 +153,10 @@ first-flip layer — all as a function of training step and per condition.
 4. **Metrics vs. training step** — adapters checkpointed every
    `lora.checkpoint_every` steps; don't compare conditions at one fixed step.
 5. **Right padding + explicit last-real-token gather** — never left padding.
-6. **Measurement precision** — fp32 weights for every measurement pass, fp32
-   log-softmax, and TF32 disabled (`utils.disable_tf32`, called from `run.py`).
-   fp16 logits near magnitude ~16 are spaced ~0.016 apart, so a fact whose
-   top-1/top-2 margin is finer than that flips rank between two passes over the
-   same prompt when the batch shape differs. Everything thresholded on rank is
-   affected: the known/latent/unknown split, and first-layer-of-appearance at each
-   of the 25 layers. `analyze` asserts on every run that its base re-scoring
-   reproduces `score_base` exactly (`analysis.allow_reconcile: false`). Never bf16
-   on Kaggle GPUs.
+6. **Measurement precision** — fp32 weights, fp32 log-softmax, TF32 disabled;
+   fp16 rank ties flip between passes and corrupt the condition split and every
+   first-layer-of-appearance. `analyze` asserts its base re-scoring matches
+   `score_base` on those thresholds. Never bf16 on Kaggle GPUs.
 7. **Relation stratification** — per-relation cap in condition sampling
    (`data.max_relation_fraction`).
 8. **Wrong-answer audit** — `score_base` reports what wrong predictions look

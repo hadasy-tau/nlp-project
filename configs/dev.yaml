@@ -7,7 +7,7 @@ output_dir: outputs_dev
 model:
   name: EleutherAI/pythia-160m-deduped
   revision: null
-  inference_dtype: float32   # matches default.yaml; see the comment there
+  inference_dtype: float32
   scoring_dtype: null
   device: auto
 
@@ -23,10 +23,7 @@ data:
     target_false: requested_rewrite.target_new.str
     relation: requested_rewrite.relation_id
     paraphrases: paraphrase_prompts
-  # Relaxed hard: 160m knows ~18 of the 905 single-token facts in max_records=1000.
-  # Dev exists to exercise code paths, not to pass the decision rule — the real gate
-  # lives in default.yaml (300). Do not read anything scientific into a dev run.
-  min_known_facts: 10
+  min_known_facts: 10      # 160m knows ~18 of 905 facts; dev only exercises code paths
   n_per_condition: 50
   max_relation_fraction: 0.5
   synthetic:

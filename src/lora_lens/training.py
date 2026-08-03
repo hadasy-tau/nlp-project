@@ -56,9 +56,7 @@ def make_collate(pad_id: int):
 
 def train_lora(cfg, tokenizer, conditions: pd.DataFrame, device) -> Path:
     """Fine-tune LoRA on all three conditions jointly; returns the lora output dir."""
-    # Imported lazily (like load_model does) so that list_checkpoints — and therefore
-    # the analysis/patching/locality stages that only need it — stay importable in a
-    # peft-free environment, e.g. post-hoc analysis of downloaded parquet artifacts.
+    # Lazy so list_checkpoints stays importable without peft.
     from peft import LoraConfig, get_peft_model
 
     out_dir = Path(cfg.output_dir) / "lora"

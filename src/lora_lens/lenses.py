@@ -44,10 +44,7 @@ def load_tuned_lens(cfg, base_model, device):
         lens = TunedLens.from_model_and_pretrained(
             unwrap_base(base_model), lens_resource_id=lens_id
         )
-        # Always fp32, regardless of the model's dtype: the lens is a tiny affine
-        # probe (cost is negligible) and pinning it decouples the probe from the
-        # per-variant measurement dtype, which may differ when model.scoring_dtype
-        # is set. Hidden states are cast to match at the call site.
+        # Pinned to fp32 so the probe is independent of the per-variant model dtype.
         lens = lens.to(device=device, dtype=torch.float32)
         lens.eval()
         print(f"[lens] tuned lens loaded for {lens_id}")
