@@ -77,11 +77,14 @@ def layerwise_answer_metrics(model, enc, answer_ids: torch.Tensor, tuned_lens,
         logprobs = F.log_softmax(logits.float(), dim=-1)  # fp32 always (pitfall 6)
         ans_lp = logprobs.gather(1, answer_ids[:, None]).squeeze(1)
         rank = (logprobs > ans_lp[:, None]).sum(dim=1) + 1
+        top_lp = logprobs.max(dim=-1).values
         for row in range(logits.shape[0]):
             rec = {
                 "row": row, "lens": lens_name, "layer": layer,
                 "answer_logprob": ans_lp[row].item(),
                 "answer_rank": int(rank[row].item()),
+                # Gap to the winning token; 0 when the answer is top-1.
+                "top1_margin": (top_lp[row] - ans_lp[row]).item(),
             }
             for k in top_k:
                 rec[f"in_top_{k}"] = rec["answer_rank"] <= k

@@ -7,9 +7,8 @@ output_dir: outputs   # on Kaggle, override to /kaggle/working/outputs
 model:
   name: EleutherAI/pythia-410m-deduped
   revision: null
-  # fp16 for inference (Kaggle T4/P100 do not support bf16). Training loads fp32
-  # weights and uses fp16 autocast; log-softmax is always computed in fp32.
-  inference_dtype: float16
+  # fp32: fp16 rank ties flip between passes and corrupt the condition split.
+  inference_dtype: float32
   device: auto            # auto | cuda | cpu
 
 data:
@@ -82,6 +81,10 @@ lens:
 
 analysis:
   batch_size: 32
+  # true overwrites base rows that disagree with score_base instead of aborting.
+  allow_reconcile: false
+  # Structural-breakage guard on the base-vs-score_base log-prob gap, not a precision test.
+  logprob_atol: 0.05
   top_k: [1, 5, 10]
   # Which checkpoints to analyze; "all" or a list of steps, always includes final.
   checkpoints: all
