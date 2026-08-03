@@ -50,7 +50,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 from .training import list_checkpoints
-from .utils import batched, free_model, gather_last, load_model
+from .utils import batched, free_model, gather_last, load_model, measurement_dtype
 
 
 def _topk_kl(base_logprobs: torch.Tensor, lora_logprobs: torch.Tensor,
@@ -159,12 +159,13 @@ def run_locality_scoring(cfg, tokenizer, conditions: pd.DataFrame, device) -> No
     log_path = Path(cfg.output_dir) / "lora" / "training_log.csv"
     final_step = int(pd.read_csv(log_path)["step"].max()) if log_path.exists() else -1
 
-    base_model = load_model(cfg, device=device)
+    base_model = load_model(cfg, device=device, dtype=measurement_dtype(cfg))
 
     all_frames = []
     for label, adapter_path in checkpoints:
         step = final_step if label == "final" else int(label.split("_")[1])
-        lora_model = load_model(cfg, device=device, adapter_path=adapter_path)
+        lora_model = load_model(cfg, device=device, adapter_path=adapter_path,
+                                dtype=measurement_dtype(cfg))
         all_frames.append(_score_one_checkpoint(
             base_model, lora_model, expanded, tokenizer, cfg, device, label, step))
         free_model(lora_model)

@@ -18,10 +18,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from .analysis import _reconcile_base_final_layer, _run_variant, build_eval_table, summarize
+from .analysis import _check_base_final_layer, _run_variant, build_eval_table, summarize
 from .lenses import load_tuned_lens
 from .training import train_lora
-from .utils import free_model, load_model
+from .utils import free_model, load_model, measurement_dtype
 
 
 def run_rank_ablation(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
@@ -39,11 +39,15 @@ def run_rank_ablation(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
     eval_df = build_eval_table(cfg, conditions).reset_index(names="prompt_idx")
 
     # Tuned lens is rank-independent — load once from the base model.
-    base_model = load_model(cfg, device=device)
+    base_model = load_model(cfg, device=device,
+                            dtype=measurement_dtype(cfg, critical=True))
     tuned_lens = load_tuned_lens(cfg, base_model, device)
     base_frame = _run_variant(cfg, base_model, tokenizer, eval_df, tuned_lens, device,
                                "base", 0)
-    base_frame = _reconcile_base_final_layer(base_frame, eval_df)
+    base_frame = _check_base_final_layer(
+        base_frame, eval_df, cfg.analysis.get("allow_reconcile", False),
+        cfg.analysis.get("logprob_atol", 0.05),
+        cfg.data.get("latent_logprob_threshold", -5.0))
     base_frame["rank"] = 0
     free_model(base_model)
 
@@ -63,7 +67,8 @@ def run_rank_ablation(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
         train_lora(r_cfg, tokenizer, conditions, device)
 
         adapter = Path(r_cfg.output_dir) / "lora" / "final"
-        lora_model = load_model(cfg, device=device, adapter_path=adapter)
+        lora_model = load_model(cfg, device=device, adapter_path=adapter,
+                                dtype=measurement_dtype(cfg))
         frame = _run_variant(cfg, lora_model, tokenizer, eval_df, tuned_lens, device,
                              f"r{r}", r)
         free_model(lora_model)

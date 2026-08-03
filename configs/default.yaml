@@ -7,9 +7,21 @@ output_dir: outputs   # on Kaggle, override to /kaggle/working/outputs
 model:
   name: EleutherAI/pythia-410m-deduped
   revision: null
-  # fp16 for inference (Kaggle T4/P100 do not support bf16). Training loads fp32
-  # weights and uses fp16 autocast; log-softmax is always computed in fp32.
-  inference_dtype: float16
+  # fp32 for every measurement pass. fp16 logits near magnitude ~16 are spaced
+  # ~0.016 apart, which is coarse enough that a fact whose top-1/top-2 margin is
+  # finer than that flips rank between two passes over the same prompt whenever the
+  # batch shape differs. That corrupts rank-thresholded quantities: the condition
+  # split itself (rank 1 / rank 2-5 boundaries) and every first-layer-of-appearance
+  # (a rank==1 threshold at each of 25 layers). fp32 widens the spacing to ~1e-6 and
+  # the effect disappears; analyze asserts this on every run.
+  # Training is unaffected: it still loads fp32 master weights + fp16 autocast.
+  inference_dtype: float32
+  # Optional higher precision for just the condition-defining passes (score_base and
+  # the base variant in analyze). Only useful as a fallback on hardware without fast
+  # fp32 (T4/P100): set inference_dtype=float16 and scoring_dtype=float32 to keep the
+  # split reproducible while the bulk passes stay fast. Leave null on A100 so every
+  # variant is measured identically.
+  scoring_dtype: null
   device: auto            # auto | cuda | cpu
 
 data:
@@ -84,6 +96,20 @@ lens:
 
 analysis:
   batch_size: 32
+  # false = assert that analyze's base re-scoring reproduces score_base exactly, and
+  # abort if not (the correct behaviour under fp32). true = overwrite the disagreeing
+  # rows with score_base's values instead, which makes the base column definitional
+  # rather than measured. Only set true when deliberately running the bulk passes in
+  # fp16, and disclose the resulting base/LoRA precision asymmetry.
+  allow_reconcile: false
+  # Structural-breakage guard on the base-vs-score_base log-prob gap — NOT a
+  # precision assertion. What is asserted is threshold agreement: rank==1,
+  # rank<=5, and logprob > data.latent_logprob_threshold. Raw values are not,
+  # because forward-pass noise amplifies fp32's ~1e-7 relative error to ~1e-3
+  # absolute on a final log-prob, and deep-tail ranks drift by +/-1 at any
+  # precision — neither can move a fact across a threshold it wasn't already on.
+  # A gap above this means the two passes scored different prompts or tokens.
+  logprob_atol: 0.05
   top_k: [1, 5, 10]
   # Which checkpoints to analyze; "all" or a list of steps, always includes final.
   checkpoints: all

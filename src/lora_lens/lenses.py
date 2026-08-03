@@ -44,7 +44,11 @@ def load_tuned_lens(cfg, base_model, device):
         lens = TunedLens.from_model_and_pretrained(
             unwrap_base(base_model), lens_resource_id=lens_id
         )
-        lens = lens.to(device=device, dtype=next(base_model.parameters()).dtype)
+        # Always fp32, regardless of the model's dtype: the lens is a tiny affine
+        # probe (cost is negligible) and pinning it decouples the probe from the
+        # per-variant measurement dtype, which may differ when model.scoring_dtype
+        # is set. Hidden states are cast to match at the call site.
+        lens = lens.to(device=device, dtype=torch.float32)
         lens.eval()
         print(f"[lens] tuned lens loaded for {lens_id}")
         return lens
@@ -98,5 +102,5 @@ def layerwise_answer_metrics(model, enc, answer_ids: torch.Tensor, tuned_lens,
             if layer == n_layers:
                 add("tuned", layer, final_logits)
             else:
-                add("tuned", layer, tuned_lens(h, idx=layer))
+                add("tuned", layer, tuned_lens(h.float(), idx=layer))
     return records
