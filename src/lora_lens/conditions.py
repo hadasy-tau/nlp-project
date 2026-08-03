@@ -79,6 +79,20 @@ def build_conditions(cfg, scored: pd.DataFrame, synthetic: pd.DataFrame) -> pd.D
         print(f"[conditions] {name}: {len(sample)} facts "
               f"({sample['relation'].nunique()} relations)")
 
+    # Carry the ORIGINAL score_base pass's answer_rank/answer_logprob through
+    # (renamed base_*) so the analyze stage can reconcile its own, independently
+    # re-run base-model pass against the values that actually *defined* known/
+    # latent/unknown, rather than silently trusting a second fp16 forward pass to
+    # reproduce the first bit-for-bit (it doesn't always — see analysis.py).
+    # NaN for synthetic facts, which were never scored by the base model.
+    combined = pd.concat(parts, ignore_index=True)
+    for c in ("answer_rank", "answer_logprob"):
+        if c not in combined.columns:
+            combined[c] = float("nan")
+    combined = combined.rename(columns={"answer_rank": "base_answer_rank",
+                                        "answer_logprob": "base_answer_logprob"})
+
     cols = ["fact_id", "condition", "relation", "subject", "prompt", "paraphrases",
-            "neighborhood_prompts", "answer", "answer_token_id"]
-    return pd.concat(parts, ignore_index=True)[cols]
+            "neighborhood_prompts", "answer", "answer_token_id",
+            "base_answer_rank", "base_answer_logprob"]
+    return combined[cols]

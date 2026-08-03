@@ -22,20 +22,77 @@ from .utils import batched, free_model, load_model
 
 def build_eval_table(cfg, conditions: pd.DataFrame) -> pd.DataFrame:
     """One row per (fact, prompt). Training prompts are 'train'; paraphrases are the
-    held-out probes ('paraphrase') that never appeared in LoRA training (pitfall 3)."""
+    held-out probes ('paraphrase') that never appeared in LoRA training (pitfall 3).
+
+    Train rows carry the fact's base_answer_rank/base_answer_logprob through from
+    score_base (see conditions.py) — the values that actually *defined* known/
+    latent/unknown — so the base variant's final-layer numbers can be reconciled
+    against them instead of trusting a second, independently-batched fp16 forward
+    pass to reproduce the first one bit-for-bit (see _reconcile_base_final_layer).
+    Paraphrases have no such cached value (score_base never scored them).
+    """
     rows = []
     for _, r in conditions.iterrows():
         rows.append({"fact_id": r["fact_id"], "condition": r["condition"],
                      "prompt": r["prompt"], "prompt_type": "train",
-                     "answer_token_id": r["answer_token_id"]})
+                     "answer_token_id": r["answer_token_id"],
+                     "base_answer_rank": r.get("base_answer_rank", float("nan")),
+                     "base_answer_logprob": r.get("base_answer_logprob", float("nan"))})
         if cfg.analysis.eval_paraphrases:
             val = r.get("paraphrases", None)
             paras = list(val) if val is not None and hasattr(val, "__iter__") else []
             for p in paras:
                 rows.append({"fact_id": r["fact_id"], "condition": r["condition"],
                              "prompt": str(p).rstrip(), "prompt_type": "paraphrase",
-                             "answer_token_id": r["answer_token_id"]})
+                             "answer_token_id": r["answer_token_id"],
+                             "base_answer_rank": float("nan"),
+                             "base_answer_logprob": float("nan")})
     return pd.DataFrame(rows)
+
+
+def _reconcile_base_final_layer(frame: pd.DataFrame, eval_df: pd.DataFrame) -> pd.DataFrame:
+    """Overwrite the base variant's final-layer answer_rank/answer_logprob with the
+    original score_base values wherever one is cached (train prompts only).
+
+    Both lenses read the model's true final logits at the final layer (see
+    layerwise_answer_metrics: layer == n_layers always uses `final_logits`
+    directly, not a lens approximation), so in exact arithmetic this row and
+    score_base's original pass over the same prompt/model should agree exactly.
+    In practice they occasionally don't: score_base batches the full ~17.6k-fact
+    pool at cfg.scoring.batch_size while analyze re-scores a different, smaller,
+    differently-ordered subset at cfg.analysis.batch_size, and fp16 matmul/
+    attention kernels are not guaranteed bit-identical across different tensor
+    shapes — a handful of near-tied logits can flip. That was silently making
+    "known" (which is *known base top-1 correct* by definition) show up as
+    98.8% instead of 100% base accuracy, and "latent" (defined as *not* top-1)
+    show up as 0.2% instead of 0.0%. Since the cached value is authoritative
+    (it's what the condition split was actually built from), we reconcile here
+    rather than let a second, non-bit-identical forward pass silently overrule it.
+    """
+    cache = eval_df.loc[eval_df["prompt_type"] == "train",
+                        ["prompt_idx", "base_answer_rank", "base_answer_logprob"]].dropna()
+    if cache.empty:
+        return frame
+    cache = cache.set_index("prompt_idx")
+
+    n_layers = frame["layer"].max()
+    final_mask = frame["layer"] == n_layers
+    has_cache = frame["prompt_idx"].isin(cache.index)
+    target = final_mask & has_cache
+    if not target.any():
+        return frame
+
+    cached_rank = frame.loc[target, "prompt_idx"].map(cache["base_answer_rank"])
+    cached_lp = frame.loc[target, "prompt_idx"].map(cache["base_answer_logprob"])
+    n_mismatch = int((frame.loc[target, "answer_rank"] != cached_rank).sum())
+    if n_mismatch:
+        print(f"[analyze] reconciled {n_mismatch}/{int(target.sum())} base final-layer "
+              "rows where the fp16 re-scoring pass disagreed with score_base's "
+              "original pass (batch-shape non-determinism); using the original "
+              "score_base value, which is what the condition split was built from.")
+    frame.loc[target, "answer_rank"] = cached_rank.astype(int).to_numpy()
+    frame.loc[target, "answer_logprob"] = cached_lp.to_numpy()
+    return frame
 
 
 @torch.no_grad()
@@ -158,8 +215,11 @@ def run_analysis(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
             model = base_model
         else:
             model = load_model(cfg, device=device, adapter_path=adapter)
-        frames.append(_run_variant(cfg, model, tokenizer, eval_df, tuned_lens, device,
-                                   label, step))
+        frame = _run_variant(cfg, model, tokenizer, eval_df, tuned_lens, device,
+                             label, step)
+        if label == "base":
+            frame = _reconcile_base_final_layer(frame, eval_df)
+        frames.append(frame)
         if adapter is not None:
             free_model(model)
     free_model(base_model)

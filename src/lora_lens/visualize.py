@@ -4,6 +4,7 @@ Three figures, each designed to answer one specific question:
   fig_delta_logprob.pdf  — WHERE does LoRA's gain appear across layers?
   fig_patching.pdf       — WHERE is the update causally located, and how does it grow?
   fig_rank_ablation.pdf  — Does more capacity (rank) change WHERE or just HOW MANY?
+  fig_layer_top1_*.pdf   — At which layers is the correct answer rank-1? (spike plot)
 
 Usage as a pipeline stage:
     python -m lora_lens.run --config configs/default.yaml --stages visualize
@@ -104,9 +105,20 @@ def fig_delta_logprob(results_dir: Path, figures_dir: Path) -> None:
                 marker=MARKERS[cond], markevery=MARKER_EVERY, markersize=4,
                 label=CONDITION_LABELS[cond])
 
-    # Vertical markers at median causal first-flip layers (filled in after patching runs).
-    for x, cond in [(14, "unknown"), (19, "synthetic")]:
-        ax.axvline(x, color=COLORS[cond], linewidth=0.8, linestyle=":", alpha=0.7)
+    # Vertical markers at median causal first-flip layers, read live from patching.csv
+    # (final checkpoint) so the figure always matches whatever the data currently says.
+    patch_path = results_dir / "patching.csv"
+    if patch_path.exists():
+        patch_df = pd.read_csv(patch_path)
+        final_patch = patch_df[(patch_df["layer"] == -1) & (patch_df["variant"] == "final")]
+        for cond in COND_ORDER:
+            medians = final_patch[final_patch["condition"] == cond]["first_flip_layer"].dropna()
+            if medians.empty:
+                continue
+            ax.axvline(medians.median(), color=COLORS[cond], linewidth=0.8,
+                      linestyle=":", alpha=0.7)
+    else:
+        print(f"[viz] {patch_path} not found — skipping first-flip-layer markers.")
 
     ax.axhline(0, color="black", linewidth=0.6, linestyle="-", alpha=0.4)
     ax.set_xlabel("Transformer layer")
@@ -265,6 +277,221 @@ def fig_rank_ablation(results_dir: Path, figures_dir: Path) -> None:
     print(f"[viz] saved {out}")
 
 
+# ── Figure 3b: Locality drift across training ──────────────────────────────────
+#
+# Mirrors the right panel of fig_patching: KL divergence (top-k, base||LoRA) on
+# neighborhood prompts vs. training step, one line per condition. Substantiates
+# the paper's own recommendation to "monitor neighborhood KL-divergence during
+# training as an early warning signal" with an actual curve.
+
+def fig_locality(results_dir: Path, figures_dir: Path) -> None:
+    path = results_dir / "locality.csv"
+    if not path.exists():
+        print(f"[viz] {path} not found — skipping locality-vs-step figure.")
+        return
+
+    df = pd.read_csv(path)
+    if "step" not in df.columns or df["variant"].nunique() <= 1:
+        print("[viz] locality.csv has only one checkpoint — skipping locality-vs-step figure "
+              "(re-run score_locality after this update to get per-checkpoint tracking).")
+        return
+
+    by_step = (df.groupby(["condition", "variant", "step"])["kl_div"]
+              .mean().reset_index())
+
+    fig, ax = plt.subplots(figsize=(3.5, 2.8))
+    for cond in COND_ORDER:
+        sub = by_step[by_step["condition"] == cond].sort_values("step")
+        if sub.empty:
+            continue
+        ax.plot(sub["step"], sub["kl_div"],
+                color=COLORS[cond], linestyle=LINE_STYLES[cond],
+                marker=MARKERS[cond], markersize=5,
+                label=CONDITION_LABELS[cond])
+
+    ax.set_xlabel("Training step")
+    ax.set_ylabel("Mean top-$k$ KL(base $\\|$ LoRA)\non neighborhood prompts")
+    ax.set_title("Locality drift during training")
+    ax.legend(fontsize=7)
+
+    fig.tight_layout(pad=0.5)
+    out = figures_dir / "fig_locality.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[viz] saved {out}")
+
+
+# ── Figure 4: Layer-wise top-1 accuracy (histogram-style) ─────────────────────
+#
+# Answers: at which layers does the correct answer briefly become rank-1?
+# Combined panel pools all conditions; by-condition panel shows the four trends.
+# Uses layerwise.parquet (in_top_1 per layer) — no extra pipeline stage needed.
+
+def _layer_top1_curve(df: pd.DataFrame, variant: str, lens: str,
+                      prompt_type: str = "train") -> pd.DataFrame:
+    """Per-layer fraction of prompts where the answer is rank-1 (0–100%)."""
+    sub = df[(df["variant"] == variant) & (df["lens"] == lens)
+             & (df["prompt_type"] == prompt_type)]
+    if sub.empty:
+        return pd.DataFrame(columns=["condition", "layer", "pct_top1", "n_prompts"])
+    pct = (sub.groupby(["condition", "layer"], as_index=False)
+             .agg(pct_top1=("in_top_1", "mean"), n_prompts=("in_top_1", "size")))
+    pct["pct_top1"] *= 100.0
+    return pct
+
+
+def fig_layer_top1_combined(results_dir: Path, figures_dir: Path,
+                            variant: str = "base", lens: str = "logit",
+                            prompt_type: str = "train") -> None:
+    path = results_dir / "layerwise.parquet"
+    if not path.exists():
+        print(f"[viz] {path} not found — skipping layer top-1 combined figure.")
+        return
+
+    df = pd.read_parquet(path)
+    sub = df[(df["variant"] == variant) & (df["lens"] == lens)
+             & (df["prompt_type"] == prompt_type)]
+    if sub.empty:
+        print("[viz] no rows for layer top-1 combined figure — skipping.")
+        return
+
+    # Pool every prompt equally (not an unweighted mean of condition curves).
+    pooled = (sub.groupby("layer", as_index=False)
+              .agg(pct_top1=("in_top_1", "mean"), n_prompts=("in_top_1", "size")))
+    pooled["pct_top1"] *= 100.0
+    n_layers = int(pooled["layer"].max())
+    layers = np.arange(n_layers + 1)
+
+    fig, ax = plt.subplots(figsize=(3.5, 2.8))
+    ax.bar(pooled["layer"], pooled["pct_top1"],
+           width=0.85, color="#666666", alpha=0.85, edgecolor="white", linewidth=0.4)
+    ax.set_xlabel("Transformer layer")
+    ax.set_ylabel("% of facts with correct answer\n(rank-1 at this layer)")
+    ax.set_title(f"Layer-wise accuracy — all conditions ({variant}, {lens} lens)")
+    ax.set_xlim(-0.5, n_layers + 0.5)
+    ax.set_xticks(layers[::max(1, len(layers) // 8)])
+    ax.set_ylim(0, min(105, pooled["pct_top1"].max() * 1.15 + 1))
+
+    fig.tight_layout(pad=0.5)
+    suffix = "" if (variant == "base" and lens == "logit") else f"_{variant}_{lens}"
+    out = figures_dir / f"fig_layer_top1_combined{suffix}.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[viz] saved {out}")
+
+
+def fig_layer_top1_by_condition(results_dir: Path, figures_dir: Path,
+                                variant: str = "base", lens: str = "logit",
+                                prompt_type: str = "train") -> None:
+    path = results_dir / "layerwise.parquet"
+    if not path.exists():
+        print(f"[viz] {path} not found — skipping layer top-1 by-condition figure.")
+        return
+
+    df = pd.read_parquet(path)
+    curves = _layer_top1_curve(df, variant, lens, prompt_type)
+    if curves.empty:
+        print("[viz] no rows for layer top-1 by-condition figure — skipping.")
+        return
+
+    n_layers = int(curves["layer"].max())
+    ymax = min(105, curves["pct_top1"].max() * 1.15 + 1)
+
+    fig, ax = plt.subplots(figsize=(3.5, 2.8))
+    for cond in COND_ORDER:
+        sub = curves[curves["condition"] == cond].sort_values("layer")
+        if sub.empty:
+            continue
+        ax.plot(sub["layer"], sub["pct_top1"],
+                color=COLORS[cond], linestyle=LINE_STYLES[cond],
+                marker=MARKERS[cond], markevery=MARKER_EVERY, markersize=4,
+                linewidth=1.8, label=CONDITION_LABELS[cond])
+
+    ax.set_xlabel("Transformer layer")
+    ax.set_ylabel("% of facts with correct answer\n(rank-1 at this layer)")
+    ax.set_title(f"Layer-wise accuracy by condition ({variant}, {lens} lens)")
+    ax.set_xlim(0, n_layers)
+    ax.set_ylim(0, ymax)
+    ax.legend(loc="upper left", fontsize=7)
+
+    fig.tight_layout(pad=0.5)
+    suffix = "" if (variant == "base" and lens == "logit") else f"_{variant}_{lens}"
+    out = figures_dir / f"fig_layer_top1_by_condition{suffix}.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[viz] saved {out}")
+
+
+# ── Figure 5: Baseline fact-pool rank/log-prob distribution ────────────────────
+#
+# Answers: why these specific cut points (rank 1 / rank 5 / logprob threshold)?
+# Pure visualization of facts_scored.parquet — no new computation. Rank 5 is a
+# safe hardcoded boundary (top5_correct is computed with a fixed k=5 in
+# scoring.py, not configurable), but the log-prob cut is
+# data.latent_logprob_threshold in the config (default -5.0, see conditions.py)
+# and must be read from there so this figure can't silently go stale if that
+# threshold is ever tuned (e.g. the sensitivity sweep noted in the paper).
+
+_DEFAULT_LATENT_THRESHOLD = -5.0
+
+
+def _load_latent_threshold(output_dir: Path) -> float:
+    """Read data.latent_logprob_threshold from <output_dir>/config_resolved.yaml
+    (written by every pipeline run), falling back to the conditions.py default
+    if the file is missing or the key was never overridden."""
+    path = output_dir / "config_resolved.yaml"
+    if not path.exists():
+        return _DEFAULT_LATENT_THRESHOLD
+    import yaml
+    with open(path, encoding="utf-8") as f:
+        resolved = yaml.safe_load(f) or {}
+    return resolved.get("data", {}).get("latent_logprob_threshold", _DEFAULT_LATENT_THRESHOLD)
+
+
+def fig_baseline_distribution(output_dir: Path, figures_dir: Path,
+                              latent_threshold: float = _DEFAULT_LATENT_THRESHOLD) -> None:
+    path = output_dir / "facts_scored.parquet"
+    if not path.exists():
+        print(f"[viz] {path} not found — skipping baseline distribution figure.")
+        return
+
+    df = pd.read_parquet(path)
+
+    fig, (ax_rank, ax_lp) = plt.subplots(1, 2, figsize=(6.8, 2.8))
+
+    # ── Left: bucketed answer_rank histogram ──────────────────────────────────
+    bins = [1, 2, 6, 11, 51, np.inf]
+    labels = ["1\n(known)", "2\u20135\n(latent cand.)", "6\u201310", "11\u201350", "51+"]
+    bucket = pd.cut(df["answer_rank"], bins=bins, right=False, labels=labels)
+    counts = bucket.value_counts().reindex(labels)
+    bar_colors = [COLORS["known"], COLORS["latent"], COLORS["unknown"],
+                  COLORS["unknown"], COLORS["unknown"]]
+    ax_rank.bar(range(len(counts)), counts.values, color=bar_colors, alpha=0.85)
+    ax_rank.set_xticks(range(len(counts)))
+    ax_rank.set_xticklabels(labels, fontsize=7)
+    ax_rank.set_xlabel("Base-model answer rank")
+    ax_rank.set_ylabel("Number of facts")
+    ax_rank.set_title("Rank distribution (n={:,})".format(len(df)))
+
+    # ── Right: answer_logprob histogram with the latent threshold marked ──────
+    finite_lp = df["answer_logprob"].replace([np.inf, -np.inf], np.nan).dropna()
+    ax_lp.hist(finite_lp.clip(lower=-20), bins=40, color=COLORS["unknown"], alpha=0.75)
+    ax_lp.axvline(latent_threshold, color="black", linewidth=1.2, linestyle="--", alpha=0.8)
+    ax_lp.text(latent_threshold, ax_lp.get_ylim()[1] * 0.92, f" logprob = {latent_threshold:g}",
+              fontsize=7, ha="left", va="top")
+    ax_lp.set_xlabel("Base-model answer log-probability")
+    ax_lp.set_ylabel("Number of facts")
+    ax_lp.set_title("Log-probability distribution")
+
+    fig.suptitle(f"Why rank\u22125 / logprob>{latent_threshold:g} define \u2018latent\u2019",
+                fontsize=9, y=1.03)
+    fig.tight_layout(pad=0.4, w_pad=1.8)
+    out = figures_dir / "fig_baseline_distribution.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[viz] saved {out}")
+
+
 # ── LaTeX table snippets ───────────────────────────────────────────────────────
 
 def print_latex_tables(results_dir: Path) -> None:
@@ -272,8 +499,8 @@ def print_latex_tables(results_dir: Path) -> None:
     # ── Table 1: Main results ──────────────────────────────────────────────────
     summary_path = results_dir / "summary.csv"
     if summary_path.exists():
-        s = pd.read_csv(summary_path)
-        s = s[(s["lens"] == "logit") & (s["variant"].isin(["base", "final"]))]
+        s_all = pd.read_csv(summary_path)
+        s = s_all[(s_all["lens"] == "logit") & (s_all["variant"].isin(["base", "final"]))]
 
         rows = [
             ("Known",          "train", "known",     "train"),
@@ -283,9 +510,15 @@ def print_latex_tables(results_dir: Path) -> None:
             ("Unknown",        "train", "unknown",   "train"),
             ("Unknown",        "para.", "unknown",   "paraphrase"),
             ("Synthetic",      "train", "synthetic", "train"),
+            # Present only once synthetic facts carry generated paraphrases
+            # (make_synthetic() in data.py); the row is silently skipped below
+            # via the b.empty/f.empty guard on older runs without this data.
+            ("Synthetic",      "para.", "synthetic", "paraphrase"),
         ]
 
-        print("\n% ── Table 1: Main results ─────────────────────────────────────")
+        # Plain ASCII: Windows consoles default to cp1252, which cannot encode
+        # box-drawing characters and would crash the print.
+        print("\n% -- Table 1: Main results --------------------------------------")
         print(r"""\begin{table}[t]
 \centering\small
 \caption{Logit-lens results before and after LoRA fine-tuning (Pythia-410m-deduped, $r=16$).
@@ -314,6 +547,40 @@ Para.\ = held-out paraphrase prompts.}
 \end{tabular}
 \end{table}""")
 
+        # ── Table 1b: Logit-lens vs. tuned-lens comparison ────────────────────
+        # Substantiates the "convergent evidence" claim with a number instead of
+        # an assertion: both lenses are computed for every checkpoint, but the
+        # tuned-lens rows were never surfaced anywhere until now.
+        cmp_df = s_all[(s_all["variant"] == "final") & (s_all["prompt_type"] == "train")]
+        if "tuned" in cmp_df["lens"].unique():
+            print("\n% -- Table 1b: Logit-lens vs. tuned-lens comparison -------------")
+            print(r"""\begin{table}[t]
+\centering\small
+\caption{Final-checkpoint logit-lens vs.\ tuned-lens agreement on training prompts.
+Convergence between an untuned and a trained unembedding-correction lens indicates
+the layer-wise trajectories are not an artifact of the base model's raw unembedding.}
+\label{tab:lens_comparison}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Acc@1}} & \multicolumn{2}{c}{\textbf{Mean first layer}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Condition} & Logit & Tuned & Logit & Tuned \\
+\midrule""")
+            for cond in COND_ORDER:
+                lg = cmp_df[(cmp_df["condition"] == cond) & (cmp_df["lens"] == "logit")]
+                tn = cmp_df[(cmp_df["condition"] == cond) & (cmp_df["lens"] == "tuned")]
+                if lg.empty or tn.empty:
+                    continue
+                lg, tn = lg.iloc[0], tn.iloc[0]
+                print(f"{CONDITION_LABELS[cond]} & "
+                      f"{lg['final_accuracy']:.3f} & {tn['final_accuracy']:.3f} & "
+                      f"{lg['mean_first_layer']:.1f} & {tn['mean_first_layer']:.1f} \\\\")
+            print(r"""\bottomrule
+\end{tabular}
+\end{table}""")
+        else:
+            print("\n[viz] no tuned-lens rows in summary.csv — skipping lens comparison table.")
+
     # ── Table 2: Causal patching ───────────────────────────────────────────────
     patch_path = results_dir / "patching.csv"
     if patch_path.exists():
@@ -323,7 +590,7 @@ Para.\ = held-out paraphrase prompts.}
                 .agg(mean="mean", median="median", count="count")
                 .reindex(COND_ORDER))
 
-        print("\n% ── Table 2: Causal patching ──────────────────────────────────")
+        print("\n% -- Table 2: Causal patching -----------------------------------")
         print(r"""\begin{table}[t]
 \centering\small
 \caption{Activation patching at the final LoRA checkpoint ($r=16$).
@@ -349,11 +616,47 @@ model to predict the target answer.}
     loc_path = results_dir / "locality.csv"
     if loc_path.exists():
         loc = pd.read_csv(loc_path)
-        loc_sum = (loc.groupby("condition")["preserved"]
-                   .agg(rate="mean", n="count").reset_index())
+        # locality.csv now has one row per checkpoint (variant/step); restrict to
+        # the final checkpoint for this summary table.
+        if "variant" in loc.columns:
+            loc = loc[loc["variant"] == "final"]
+        agg_kwargs = dict(rate=("preserved", "mean"), n=("preserved", "count"))
+        has_kl = "kl_div" in loc.columns
+        has_secondary = "kl_div_full" in loc.columns and "escaped_mass" in loc.columns
+        if has_kl:
+            agg_kwargs["kl"] = ("kl_div", "mean")
+        if has_secondary:
+            agg_kwargs["kl_full"] = ("kl_div_full", "mean")
+            agg_kwargs["escaped"] = ("escaped_mass", "mean")
+        loc_sum = loc.groupby("condition").agg(**agg_kwargs).reset_index()
 
-        print("\n% ── Table 3: Locality ─────────────────────────────────────────")
-        print(r"""\begin{table}[t]
+        print("\n% -- Table 3: Locality -------------------------------------------")
+        if has_secondary:
+            print(r"""\begin{table}[t]
+\centering\small
+\caption{Neighborhood locality at the final checkpoint.
+\emph{Pres.} = fraction of prompts where LoRA top-1 agrees with base top-1
+(1.0 = no collateral damage). \emph{KL top-$k$} (primary) and \emph{KL full}
+(secondary, no renormalization) are mean KL$(P_\text{base}\|P_\text{LoRA})$;
+\emph{Esc.\ mass} is the fraction of LoRA's probability mass falling outside
+the base model's top-$k$ support (high = confident jump to a new token, not
+broad top-$k$ scrambling).}
+\label{tab:locality}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Condition} & \textbf{Pres.} & \textbf{KL top-$k$} & \textbf{KL full} &
+\textbf{Esc.\ mass} & \textbf{$N$} \\
+\midrule""")
+            for cond in [c for c in COND_ORDER if c != "synthetic"]:
+                label = CONDITION_LABELS[cond]
+                row = loc_sum[loc_sum["condition"] == cond]
+                if row.empty:
+                    continue
+                row = row.iloc[0]
+                print(f"{label} & {row['rate']:.3f} & {row['kl']:.2f} & "
+                      f"{row['kl_full']:.2f} & {row['escaped']:.3f} & {int(row['n']):,} \\\\")
+        else:
+            print(r"""\begin{table}[t]
 \centering\small
 \caption{Neighborhood preservation rate: fraction of related-fact prompts where
 LoRA top-1 agrees with the base model's top-1 (1.0 = no collateral damage).}
@@ -362,13 +665,13 @@ LoRA top-1 agrees with the base model's top-1 (1.0 = no collateral damage).}
 \toprule
 \textbf{Condition} & \textbf{Preservation rate} & \textbf{$N$ prompts} \\
 \midrule""")
-        for cond in [c for c in COND_ORDER if c != "synthetic"]:
-            label = CONDITION_LABELS[cond]
-            row = loc_sum[loc_sum["condition"] == cond]
-            if row.empty:
-                continue
-            row = row.iloc[0]
-            print(f"{label} & {row['rate']:.3f} & {int(row['n']):,} \\\\")
+            for cond in [c for c in COND_ORDER if c != "synthetic"]:
+                label = CONDITION_LABELS[cond]
+                row = loc_sum[loc_sum["condition"] == cond]
+                if row.empty:
+                    continue
+                row = row.iloc[0]
+                print(f"{label} & {row['rate']:.3f} & {int(row['n']):,} \\\\")
         print(r"""\bottomrule
 \end{tabular}
 \end{table}""")
@@ -379,16 +682,27 @@ LoRA top-1 agrees with the base model's top-1 (1.0 = no collateral damage).}
 # ── Entry points ───────────────────────────────────────────────────────────────
 
 def run_visualize(cfg, *_args) -> None:
-    results_dir = Path(cfg.output_dir) / "results"
-    figures_dir = Path(cfg.output_dir) / "figures"
+    output_dir = Path(cfg.output_dir)
+    results_dir = output_dir / "results"
+    figures_dir = output_dir / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
-    _run(results_dir, figures_dir)
+    latent_threshold = cfg.data.get("latent_logprob_threshold", _DEFAULT_LATENT_THRESHOLD)
+    _run(results_dir, figures_dir, output_dir, latent_threshold)
 
 
-def _run(results_dir: Path, figures_dir: Path) -> None:
+def _run(results_dir: Path, figures_dir: Path, output_dir: Path | None = None,
+        latent_threshold: float = _DEFAULT_LATENT_THRESHOLD) -> None:
+    output_dir = output_dir if output_dir is not None else results_dir.parent
     fig_delta_logprob(results_dir, figures_dir)
     fig_patching(results_dir, figures_dir)
     fig_rank_ablation(results_dir, figures_dir)
+    fig_locality(results_dir, figures_dir)
+    fig_layer_top1_combined(results_dir, figures_dir)
+    fig_layer_top1_by_condition(results_dir, figures_dir)
+    fig_layer_top1_combined(results_dir, figures_dir, lens="tuned")
+    fig_layer_top1_by_condition(results_dir, figures_dir, lens="tuned")
+    fig_layer_top1_by_condition(results_dir, figures_dir, variant="final")
+    fig_baseline_distribution(output_dir, figures_dir, latent_threshold)
     print_latex_tables(results_dir)
 
 
@@ -396,4 +710,4 @@ if __name__ == "__main__":
     results = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("outputs/results")
     figures = results.parent / "figures"
     figures.mkdir(parents=True, exist_ok=True)
-    _run(results, figures)
+    _run(results, figures, results.parent, _load_latent_threshold(results.parent))

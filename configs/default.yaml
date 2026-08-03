@@ -39,6 +39,26 @@ data:
   synthetic:
     n_facts: 200
     seed: 0
+    # Diversity/confound controls for pseudo-entity generation (make_synthetic in
+    # data.py). All are auditable after the fact via
+    # <output_dir>/synthetic_diversity_report.csv.
+    # Percentile range of the real-subject BPE token-length distribution that
+    # pseudo-names are resampled to fall within (tokenization confound guard).
+    token_length_low_pct: 5
+    token_length_high_pct: 95
+    # Max fraction of a relation's synthetic facts that may share the same object,
+    # measured per-relation and globally (cross-relation) respectively.
+    max_object_relation_fraction: 0.3
+    max_object_global_fraction: 0.15
+    # Max fraction of a relation's synthetic facts that may share the same
+    # (template, object) pair.
+    max_pair_fraction: 0.15
+    # Max allowed syllable usage rate, expressed as a multiple of the uniform
+    # rate (1 / len(syllable pool)).
+    syllable_tolerance: 2.5
+    # Number of held-out paraphrases to generate per synthetic fact (sampled
+    # from that relation's real paraphrase templates), as [min, max].
+    n_paraphrases: [2, 3]
 
 scoring:
   batch_size: 64
@@ -79,5 +99,7 @@ rank_ablation:
   ranks: [4, 8, 16, 32]
   # alpha = r * alpha_multiplier keeps the alpha/r ratio constant across ranks.
   alpha_multiplier: 2
-  # Fewer epochs for ablation runs to keep wall-clock manageable.
-  epochs: 3
+  # Matches lora.epochs (falls back to it if unset) so the r=16 ablation point is
+  # directly comparable to the main table's r=16 point instead of a different,
+  # less-trained model.
+  epochs: 5

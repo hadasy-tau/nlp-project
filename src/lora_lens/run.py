@@ -17,8 +17,8 @@ import pandas as pd
 from .config import load_config, save_config
 from .utils import load_model, load_tokenizer, resolve_device, set_seed, free_model
 
-STAGES = ["prepare_data", "score_base", "build_conditions", "train_lora", "analyze",
-          "patch", "score_locality", "rank_ablation", "visualize"]
+STAGES = ["prepare_data", "make_synthetic", "score_base", "build_conditions", "train_lora",
+          "analyze", "patch", "stats", "score_locality", "rank_ablation", "visualize"]
 
 
 def _out(cfg) -> Path:
@@ -51,10 +51,16 @@ def _preflight(stages: list[str]) -> None:
 
 
 def stage_prepare_data(cfg, tokenizer, device):
-    from .data import make_synthetic, prepare_facts
+    from .data import prepare_facts
 
     facts = prepare_facts(cfg, tokenizer)
     facts.to_parquet(_out(cfg) / "facts.parquet", index=False)
+
+
+def stage_make_synthetic(cfg, tokenizer, device):
+    from .data import make_synthetic
+
+    facts = pd.read_parquet(_out(cfg) / "facts.parquet")
     synthetic = make_synthetic(facts, tokenizer, cfg)
     synthetic.to_parquet(_out(cfg) / "synthetic.parquet", index=False)
 
@@ -100,6 +106,12 @@ def stage_patch(cfg, tokenizer, device):
 
     conditions = pd.read_parquet(_out(cfg) / "conditions.parquet")
     run_patching(cfg, tokenizer, conditions, device)
+
+
+def stage_stats(cfg, tokenizer, device):
+    from .stats import run_stats
+
+    run_stats(cfg)
 
 
 def stage_score_locality(cfg, tokenizer, device):
