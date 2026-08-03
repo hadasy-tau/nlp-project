@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 from .lenses import get_decoder_parts
 from .training import list_checkpoints
-from .utils import batched, free_model, gather_last, load_model, measurement_dtype
+from .utils import batched, free_model, gather_last, load_model
 
 
 @torch.no_grad()
@@ -100,15 +100,14 @@ def run_patching(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
     log_path = Path(cfg.output_dir) / "lora" / "training_log.csv"
     final_step = int(pd.read_csv(log_path)["step"].max()) if log_path.exists() else -1
 
-    base_model = load_model(cfg, device=device, dtype=measurement_dtype(cfg))
+    base_model = load_model(cfg, device=device)
     base_layers, _, _ = get_decoder_parts(base_model)
     n_layers = len(base_layers)
 
     all_rows = []
     for label, adapter_path in checkpoints:
         step = final_step if label == "final" else int(label.split("_")[1])
-        lora_model = load_model(cfg, device=device, adapter_path=adapter_path,
-                                dtype=measurement_dtype(cfg))
+        lora_model = load_model(cfg, device=device, adapter_path=adapter_path)
         all_rows.extend(_patch_one_checkpoint(
             base_model, lora_model, base_layers, n_layers,
             sample, tokenizer, cfg, device, label, step))

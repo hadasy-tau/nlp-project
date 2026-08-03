@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from .lenses import layerwise_answer_metrics, load_tuned_lens
 from .training import list_checkpoints
-from .utils import batched, free_model, load_model, measurement_dtype
+from .utils import batched, free_model, load_model
 
 
 def build_eval_table(cfg, conditions: pd.DataFrame) -> pd.DataFrame:
@@ -243,9 +243,7 @@ def run_analysis(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
           f"({(eval_df['prompt_type'] == 'paraphrase').sum()} held-out paraphrases)")
 
     # The BASE model's tuned lens is used for every variant (see lenses.py docstring).
-    # Critical pass: must reproduce score_base, asserted below.
-    base_model = load_model(cfg, device=device,
-                            dtype=measurement_dtype(cfg, critical=True))
+    base_model = load_model(cfg, device=device)
     tuned_lens = load_tuned_lens(cfg, base_model, device)
 
     log_path = Path(cfg.output_dir) / "lora" / "training_log.csv"
@@ -263,8 +261,7 @@ def run_analysis(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
         if adapter is None:
             model = base_model
         else:
-            model = load_model(cfg, device=device, adapter_path=adapter,
-                               dtype=measurement_dtype(cfg))
+            model = load_model(cfg, device=device, adapter_path=adapter)
         frame = _run_variant(cfg, model, tokenizer, eval_df, tuned_lens, device,
                              label, step)
         if label == "base":

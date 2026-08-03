@@ -16,7 +16,7 @@ import pandas as pd
 
 from .config import load_config, save_config
 from .utils import (configure_stdout, disable_tf32, free_model, load_model, load_tokenizer,
-                    measurement_dtype, resolve_device, set_seed)
+                    resolve_device, set_seed)
 
 STAGES = ["prepare_data", "make_synthetic", "score_base", "build_conditions", "train_lora",
           "analyze", "patch", "stats", "score_locality", "rank_ablation", "visualize"]
@@ -70,8 +70,8 @@ def stage_score_base(cfg, tokenizer, device):
     from .scoring import score_base_model
 
     facts = pd.read_parquet(_out(cfg) / "facts.parquet")
-    # Critical pass: defines known/latent/unknown, and analyze asserts against it.
-    model = load_model(cfg, device=device, dtype=measurement_dtype(cfg, critical=True))
+    # Defines known/latent/unknown; analyze asserts against it.
+    model = load_model(cfg, device=device)
     scored = score_base_model(cfg, model, tokenizer, facts, device)
     free_model(model)
     scored.to_parquet(_out(cfg) / "facts_scored.parquet", index=False)
@@ -150,9 +150,8 @@ def main(argv=None):
     set_seed(cfg.seed)
     disable_tf32()
     device = resolve_device(cfg)
-    print(f"[run] model={cfg.model.name} device={device} output_dir={cfg.output_dir}")
-    print(f"[run] measurement dtype={measurement_dtype(cfg)} "
-          f"(condition-defining passes: {measurement_dtype(cfg, critical=True)})")
+    print(f"[run] model={cfg.model.name} device={device} output_dir={cfg.output_dir} "
+          f"dtype={cfg.model.inference_dtype}")
     save_config(cfg, _out(cfg) / "config_resolved.yaml")
 
     stages = STAGES if args.stages == "all" else [s.strip() for s in args.stages.split(",")]

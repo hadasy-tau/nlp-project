@@ -9,8 +9,6 @@ model:
   revision: null
   # fp32: fp16 rank ties flip between passes and corrupt the condition split.
   inference_dtype: float32
-  # Pins only the condition-defining passes; use with inference_dtype=float16 on T4/P100.
-  scoring_dtype: null
   device: auto            # auto | cuda | cpu
 
 data:

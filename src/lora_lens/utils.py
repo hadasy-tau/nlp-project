@@ -30,16 +30,6 @@ def disable_tf32() -> None:
     torch.backends.cudnn.allow_tf32 = False
 
 
-def measurement_dtype(cfg, critical: bool = False) -> str:
-    """Dtype for a measurement pass; critical ones (score_base, base variant) may be
-    pinned higher via model.scoring_dtype."""
-    if critical:
-        override = cfg.model.get("scoring_dtype")
-        if override:
-            return override
-    return cfg.model.inference_dtype
-
-
 def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -68,9 +58,8 @@ def load_model(cfg, device=None, dtype: str | None = None, adapter_path: str | P
                train: bool = False):
     """Load the base model, optionally with a LoRA adapter attached.
 
-    Inference defaults to cfg.model.inference_dtype; measurement call sites pass
-    `dtype=measurement_dtype(cfg, ...)` explicitly. Training loads fp32 master
-    weights and relies on fp16 autocast in the train loop instead.
+    Inference uses cfg.model.inference_dtype; training loads fp32 master weights and
+    relies on fp16 autocast in the train loop instead.
     """
     device = device or resolve_device(cfg)
     torch_dtype = DTYPES[dtype or ("float32" if train else cfg.model.inference_dtype)]

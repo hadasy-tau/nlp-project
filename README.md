@@ -103,9 +103,8 @@ Use [kaggle/kaggle_pipeline.ipynb](kaggle/kaggle_pipeline.ipynb). Enable a GPU
 
 - Output goes to `/kaggle/working/outputs` (persisted; download `results/`).
 - **Never bf16** — Kaggle's T4 (compute 7.5) and P100 (6.0) do not support it.
-- Measurement passes default to **fp32**. T4/P100 have no fast fp32 path, so on
-  Kaggle set `model.inference_dtype=float16`, `model.scoring_dtype=float32` and
-  `analysis.allow_reconcile=true`, and disclose the base/LoRA precision asymmetry.
+- Measurement passes run in **fp32**; T4/P100 have no fast fp32 path, so expect
+  this to be slow on Kaggle (the project targets a Colab A100).
 - The whole 410m run fits comfortably in a single session (LoRA on ~1.5k short
   prompts is minutes on a T4; analysis is the longer part). Use *Save & Run All*
   for free background execution.

@@ -8,7 +8,6 @@ model:
   name: EleutherAI/pythia-160m-deduped
   revision: null
   inference_dtype: float32
-  scoring_dtype: null
   device: auto
 
 data:
