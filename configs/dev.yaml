@@ -7,7 +7,7 @@ output_dir: outputs_dev
 model:
   name: EleutherAI/pythia-160m-deduped
   revision: null
-  inference_dtype: float16
+  inference_dtype: float32
   device: auto
 
 data:
@@ -22,7 +22,7 @@ data:
     target_false: requested_rewrite.target_new.str
     relation: requested_rewrite.relation_id
     paraphrases: paraphrase_prompts
-  min_known_facts: 20      # relaxed: 160m barely knows facts; dev only
+  min_known_facts: 10      # 160m knows ~18 of 905 facts; dev only exercises code paths
   n_per_condition: 50
   max_relation_fraction: 0.5
   synthetic:
@@ -50,6 +50,8 @@ lens:
 
 analysis:
   batch_size: 16
+  allow_reconcile: false
+  logprob_atol: 0.05
   top_k: [1, 5, 10]
   checkpoints: all
   eval_paraphrases: true

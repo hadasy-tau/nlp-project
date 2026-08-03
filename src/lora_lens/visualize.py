@@ -707,6 +707,9 @@ def _run(results_dir: Path, figures_dir: Path, output_dir: Path | None = None,
 
 
 if __name__ == "__main__":
+    from .utils import configure_stdout
+
+    configure_stdout()
     results = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("outputs/results")
     figures = results.parent / "figures"
     figures.mkdir(parents=True, exist_ok=True)
