@@ -163,7 +163,10 @@ def summarize(layerwise: pd.DataFrame) -> pd.DataFrame:
     # Exactly one final-layer row per (variant, lens, prompt).
     final = layerwise[layerwise["layer"] == n_layers].copy()
     final["final_correct"] = final["answer_rank"] == 1
-    per_prompt = final[keys + ["final_correct", "answer_logprob"]]
+    final["final_top5"] = final["answer_rank"] <= 5
+    final["reciprocal_rank"] = 1.0 / final["answer_rank"]
+    per_prompt = final[keys + ["final_correct", "final_top5", "reciprocal_rank",
+                               "answer_logprob"]]
 
     # First layer of appearance = earliest layer where the answer is top-1 (NaN if never).
     first = (layerwise[layerwise["answer_rank"] == 1]
@@ -173,6 +176,8 @@ def summarize(layerwise: pd.DataFrame) -> pd.DataFrame:
     return (
         per_prompt.groupby(keys[:-1])
         .agg(final_accuracy=("final_correct", "mean"),
+             final_top5_accuracy=("final_top5", "mean"),
+             final_mrr=("reciprocal_rank", "mean"),
              mean_final_logprob=("answer_logprob", "mean"),
              mean_first_layer=("first_layer", "mean"),
              n_first_layer=("first_layer", "count"),   # denominator of mean_first_layer
