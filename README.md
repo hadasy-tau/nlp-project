@@ -81,17 +81,25 @@ Everything lives in the YAML configs ([configs/default.yaml](configs/default.yam
   into nested schemas (`requested_rewrite.target_true.str`), and a `{}` or
   `{subject}` placeholder in the prompt is filled with the subject.
 
-  The default is `azhx/counterfact` (the full original) rather than the flattened
-  `NeelNanda/counterfact-tracing`, because **only the full version ships
-  `paraphrase_prompts`** — without them the held-out generalization probe
-  (pitfall 3) cannot run. The flattened version still works if you want it:
+  The default is `azhx/counterfact` (the full original), which carries the nested
+  `requested_rewrite.*` schema the default field mapping targets. The flattened
+  `NeelNanda/counterfact-tracing` still works if you want it:
 
   ```yaml
   data:
     dataset: NeelNanda/counterfact-tracing
     fields: {prompt: prompt, subject: subject, target_true: target_true,
-             target_false: target_false, relation: relation_id, paraphrases: null}
+             target_false: target_false, relation: relation_id}
   ```
+
+  Held-out paraphrases for the generalization probe (pitfall 3) no longer come
+  from the source dataset at all — they're looked up from a curated local CSV,
+  `data.paraphrase_templates_csv` (default: `additional_data/paraphreases_per_prompt.csv`),
+  keyed on the exact `(relation, prompt template)` pair. This applies uniformly to
+  real facts (`prepare_facts()`) and synthetic facts (`make_synthetic()`), and gives
+  clean, hand-verified rewordings instead of CounterFact's own `paraphrase_prompts`
+  field, whose entries are GPT-generated continuations ("<topically-primed lead-in
+  sentence>. <actual paraphrase>") rather than clean rewordings of the prompt.
 - **Lenses**: `lens.use_logit` / `lens.use_tuned`; `lens.tuned_lens_id` defaults
   to the model name. If no pretrained tuned lens exists for the model, the
   pipeline warns and continues with the logit lens only.

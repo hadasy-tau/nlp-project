@@ -21,7 +21,7 @@ data:
     target_true: requested_rewrite.target_true.str
     target_false: requested_rewrite.target_new.str
     relation: requested_rewrite.relation_id
-    paraphrases: paraphrase_prompts
+  paraphrase_templates_csv: additional_data/paraphreases_per_prompt.csv
   min_known_facts: 20      # relaxed: 160m barely knows facts; dev only
   n_per_condition: 50
   max_relation_fraction: 0.5

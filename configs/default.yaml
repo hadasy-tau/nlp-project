@@ -13,9 +13,6 @@ model:
   device: auto            # auto | cuda | cpu
 
 data:
-  # Full CounterFact — the only mirror that ships paraphrase_prompts, which the
-  # held-out generalization probe needs. The flattened NeelNanda/counterfact-tracing
-  # has no paraphrases; see the alternative mapping in the README.
   dataset: azhx/counterfact
   split: train
   max_records: null        # cap for smoke tests, e.g. 2000
@@ -27,8 +24,12 @@ data:
     target_true: requested_rewrite.target_true.str
     target_false: requested_rewrite.target_new.str
     relation: requested_rewrite.relation_id
-    paraphrases: paraphrase_prompts   # set null if the dataset has none
     neighborhood: neighborhood_prompts        # for locality scoring; set null to skip
+  # Curated (relation, template) -> clean paraphrase templates, keyed on the exact
+  # '{}'-style prompt template. Used for both real and synthetic facts' held-out
+  # paraphrase probe (pitfall 3), independent of whatever paraphrase field (if any)
+  # the source dataset itself ships.
+  paraphrase_templates_csv: additional_data/paraphreases_per_prompt.csv
   # Decision rule from the handoff: need >= this many base-model-known facts,
   # otherwise move one model size up.
   min_known_facts: 300
@@ -56,9 +57,6 @@ data:
     # Max allowed syllable usage rate, expressed as a multiple of the uniform
     # rate (1 / len(syllable pool)).
     syllable_tolerance: 2.5
-    # Number of held-out paraphrases to generate per synthetic fact (sampled
-    # from that relation's real paraphrase templates), as [min, max].
-    n_paraphrases: [2, 3]
 
 scoring:
   batch_size: 64

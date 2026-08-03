@@ -7,6 +7,7 @@ as the mapped columns exist.
 
 from __future__ import annotations
 
+import ast
 import math
 import random
 from collections import Counter
@@ -120,6 +121,43 @@ def _pick_object(rng: random.Random, objects: list[tuple[str, int]], template: s
     return best[1], best[2]
 
 
+def _build_relation_pools(real_df: pd.DataFrame) -> dict[str, dict]:
+    """One (template pool, object pool) per relation.
+
+    Template = prompt with the subject replaced by a placeholder; skip prompts
+    where the subject string is absent. Paraphrases themselves are no longer
+    pooled here — both real and synthetic facts get their paraphrases from an
+    exact (relation, template) lookup into the curated CSV (see
+    _load_paraphrase_map()), which preserves the per-fact template<->paraphrase
+    link instead of flattening it across a relation.
+    """
+    by_rel: dict[str, dict] = {}
+    for _, r in real_df.iterrows():
+        if r["subject"] and r["subject"] in r["prompt"]:
+            entry = by_rel.setdefault(r["relation"], {"templates": [], "objects": []})
+            entry["templates"].append(r["prompt"].replace(r["subject"], "{subject}"))
+            entry["objects"].append((r["answer"], r["answer_token_id"]))
+    return by_rel
+
+
+def _load_paraphrase_map(csv_path) -> dict[tuple[str, str], list[str]]:
+    """Load the curated (relation_id, original_prompt) -> [paraphrase templates]
+    CSV (additional_data/paraphreases_per_prompt.csv) into a lookup dict.
+
+    Templates use the same '{}' placeholder convention as the source dataset's
+    own prompt templates, so a fact's exact template (its filled prompt with
+    the subject substituted back out, see prepare_facts()/make_synthetic())
+    can be looked up directly — giving an exact per-template paraphrase set
+    instead of a relation-wide pool.
+    """
+    df = pd.read_csv(csv_path)
+    paraphrase_map: dict[tuple[str, str], list[str]] = {}
+    for _, row in df.iterrows():
+        key = (str(row["relation_id"]), str(row["original_prompt"]))
+        paraphrase_map[key] = ast.literal_eval(row["list_of_paraphrases"])
+    return paraphrase_map
+
+
 _MISSING = object()
 
 
@@ -180,13 +218,7 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
                 "'requested_rewrite.target_true.str'."
             )
 
-    para_path = f.get("paraphrases")
-    if para_path and _get_path(probe, para_path) is _MISSING:
-        print(f"[data] WARNING: paraphrase field {para_path!r} not found in "
-              f"{cfg.data.dataset} — the held-out paraphrase probe (pitfall 3) will be "
-              "SKIPPED, so a late-layer shift cannot be distinguished from prompt "
-              "memorization. Use a dataset that ships paraphrases (e.g. azhx/counterfact).")
-        para_path = None
+    paraphrase_map = _load_paraphrase_map(cfg.data.paraphrase_templates_csv)
 
     neighbor_path = f.get("neighborhood")
     if neighbor_path and _get_path(probe, neighbor_path) is _MISSING:
@@ -199,6 +231,7 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
 
     rows = []
     n_multi = 0
+    n_no_paraphrase_match = 0
     for i, rec in enumerate(ds):
         subject = _fix_mojibake(str(_get_path(rec, f["subject"])).strip())
         # The answer carries the leading space, so the prompt must not (pitfall 1).
@@ -208,13 +241,17 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
         if len(answer_ids) != 1:
             n_multi += 1
             continue
-        paras = [_fix_mojibake(str(p).rstrip()) for p in (_get_path(rec, para_path) or [])] \
-            if para_path else []
+        relation = str(_get_path(rec, f["relation"]))
+        template = prompt.replace(subject, "{}") if subject and subject in prompt else prompt
+        paraphrase_templates = paraphrase_map.get((relation, template), [])
+        if not paraphrase_templates:
+            n_no_paraphrase_match += 1
+        paras = [_fill_subject(t, subject) for t in paraphrase_templates]
         neighbors = [str(p).rstrip() for p in (_get_path(rec, neighbor_path) or [])] \
             if neighbor_path else []
         rows.append({
             "fact_id": f"cf_{i}",
-            "relation": str(_get_path(rec, f["relation"])),
+            "relation": relation,
             "subject": subject,
             "prompt": prompt,
             "paraphrases": paras,
@@ -227,7 +264,9 @@ def prepare_facts(cfg, tokenizer) -> pd.DataFrame:
     df = pd.DataFrame(rows)
     n_para = int(df["paraphrases"].str.len().gt(0).sum()) if len(df) else 0
     print(f"[data] {len(df)} facts kept, {n_multi} dropped (multi-token answer) "
-          f"out of {len(ds)} records; {n_para} have held-out paraphrases.")
+          f"out of {len(ds)} records; {n_para} have curated paraphrases "
+          f"({n_no_paraphrase_match} facts had no matching (relation, template) "
+          "in the paraphrase CSV).")
     return df
 
 
@@ -246,7 +285,9 @@ def make_synthetic(real_df: pd.DataFrame, tokenizer, cfg) -> pd.DataFrame:
       - pseudo-name BPE token length is matched to the real subjects' distribution
       - object reuse is capped per relation and globally (and per (template, object)
         pair), reusing the max_relation_fraction pattern from conditions.py
-      - templates and paraphrase templates are cycled through before repeating
+      - templates are cycled through before repeating; each fact's paraphrases
+        follow directly from its own template via the curated per-template map
+        (see _load_paraphrase_map()), mirroring prepare_facts()'s real-fact path
       - syllable usage across generated names is kept close to uniform
     A diversity validation report (<output_dir>/synthetic_diversity_report.csv) and
     a human-readable export (<output_dir>/synthetic_facts.csv) make all of this an
@@ -258,35 +299,15 @@ def make_synthetic(real_df: pd.DataFrame, tokenizer, cfg) -> pd.DataFrame:
     rng = random.Random(syn_cfg.seed)
     n = syn_cfg.n_facts
 
-    # One (template pool, object pool, paraphrase-template pool) per relation.
-    # Template = prompt with the subject replaced by a placeholder; skip prompts
-    # where the subject string is absent. Paraphrase templates are built the same
-    # way from the real fact's held-out paraphrases (never used in training, but
-    # usable here since synthetic paraphrases are also held out from training).
-    by_rel: dict[str, dict] = {}
-    for _, r in real_df.iterrows():
-        if r["subject"] and r["subject"] in r["prompt"]:
-            entry = by_rel.setdefault(
-                r["relation"], {"templates": [], "objects": [], "paraphrase_templates": []})
-            entry["templates"].append(r["prompt"].replace(r["subject"], "{subject}"))
-            entry["objects"].append((r["answer"], r["answer_token_id"]))
-            # After a parquet round-trip (stage_make_synthetic reads facts.parquet
-            # back from disk), list columns deserialize as numpy arrays, not plain
-            # lists — `array or []` raises ValueError for arrays with >1 element,
-            # so check iterability explicitly instead of relying on truthiness.
-            para_val = r["paraphrases"]
-            paras = list(para_val) if para_val is not None and hasattr(para_val, "__iter__") else []
-            for p in paras:
-                if r["subject"] in p:
-                    entry["paraphrase_templates"].append(p.replace(r["subject"], "{subject}"))
+    paraphrase_map = _load_paraphrase_map(cfg.data.paraphrase_templates_csv)
 
+    by_rel = _build_relation_pools(real_df)
     relations = sorted(by_rel)
     if not relations:
         raise RuntimeError("No usable relation templates found for synthetic facts.")
 
     for entry in by_rel.values():
         entry["templates"] = _dedup(entry["templates"])
-        entry["paraphrase_templates"] = _dedup(entry["paraphrase_templates"])
         entry["template_cycler"] = _Cycler(entry["templates"], rng)
 
     # Real subject token-length distribution -> "typical" range for pseudo-entities.
@@ -307,7 +328,6 @@ def make_synthetic(real_df: pd.DataFrame, tokenizer, cfg) -> pd.DataFrame:
     max_object_global_fraction = syn_cfg.get("max_object_global_fraction", 0.15)
     max_pair_fraction = syn_cfg.get("max_pair_fraction", 0.15)
     syllable_tolerance = syn_cfg.get("syllable_tolerance", 2.5)
-    n_paraphrases_range = syn_cfg.get("n_paraphrases", [2, 3])
 
     rel_object_counts: dict[str, Counter] = {rel: Counter() for rel in relations}
     global_object_counts: Counter = Counter()
@@ -344,14 +364,13 @@ def make_synthetic(real_df: pd.DataFrame, tokenizer, cfg) -> pd.DataFrame:
         seen_names.add(name)
         synthetic_token_lens.append(n_tokens)
 
-        # Paraphrases (distinct from the primary template used above), instantiated
-        # for this pseudo-entity subject — never used in training, only for the
-        # held-out generalization probe (mirrors real facts' paraphrases).
-        paraphrases = []
-        pool = [t for t in entry["paraphrase_templates"] if t != template]
-        if pool:
-            k = min(rng.randint(min(n_paraphrases_range), max(n_paraphrases_range)), len(pool))
-            paraphrases = [t.format(subject=name) for t in rng.sample(pool, k)]
+        # Paraphrases, instantiated for this pseudo-entity subject via the exact
+        # same (relation, template) curated lookup as prepare_facts() — never used
+        # in training, only for the held-out generalization probe. Mirroring the
+        # real-fact path exactly (rather than sampling from a relation-wide pool)
+        # keeps the per-fact template<->paraphrase link intact for synthetic facts too.
+        paraphrase_templates = paraphrase_map.get((rel, template.replace("{subject}", "{}")), [])
+        paraphrases = [_fill_subject(t, name) for t in paraphrase_templates]
 
         rows.append({
             "fact_id": f"syn_{i}",

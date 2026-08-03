@@ -5,6 +5,7 @@ Three figures, each designed to answer one specific question:
   fig_patching.pdf       — WHERE is the update causally located, and how does it grow?
   fig_rank_ablation.pdf  — Does more capacity (rank) change WHERE or just HOW MANY?
   fig_layer_top1_*.pdf   — At which layers is the correct answer rank-1? (spike plot)
+  fig_layer_top1_*_comparison.pdf — same, but before vs after LoRA on one figure
 
 Usage as a pipeline stage:
     python -m lora_lens.run --config configs/default.yaml --stages visualize
@@ -154,6 +155,12 @@ def fig_patching(results_dir: Path, figures_dir: Path) -> None:
     final = summary[summary["variant"] == "final"].copy()
     present = [c for c in COND_ORDER if c in final["condition"].values]
 
+    # Fix the y-range up front so the "n/N" annotations all land at the same
+    # height; otherwise each boxplot's autoscale (as points are added one
+    # condition at a time) leaves earlier low-range conditions (e.g. "known",
+    # which rarely needs a flip) with labels far below the rest.
+    ax_box.set_ylim(-1, 26)
+
     for i, cond in enumerate(present):
         sub = final[final["condition"] == cond]["first_flip_layer"].dropna()
         n_total = len(final[final["condition"] == cond])
@@ -180,7 +187,6 @@ def fig_patching(results_dir: Path, figures_dir: Path) -> None:
     ax_box.set_xticks(list(range(len(present))))
     ax_box.set_xticklabels([CONDITION_LABELS[c] for c in present])
     ax_box.set_ylabel("First-flip layer")
-    ax_box.set_ylim(-1, 26)
     ax_box.set_title("Causal locus of LoRA update")
 
     # ── Right panel: count of flipped facts vs training step ──────────────────
@@ -340,25 +346,34 @@ def _layer_top1_curve(df: pd.DataFrame, variant: str, lens: str,
     return pct
 
 
+def _layer_top1_pooled(df: pd.DataFrame, variant: str, lens: str,
+                       prompt_type: str = "train") -> pd.DataFrame:
+    """Per-layer % top-1 across all conditions for one variant."""
+    sub = df[(df["variant"] == variant) & (df["lens"] == lens)
+             & (df["prompt_type"] == prompt_type)]
+    if sub.empty:
+        return pd.DataFrame(columns=["layer", "pct_top1"])
+    pooled = (sub.groupby("layer", as_index=False)
+              .agg(pct_top1=("in_top_1", "mean")))
+    pooled["pct_top1"] *= 100.0
+    return pooled
+
+
 def fig_layer_top1_combined(results_dir: Path, figures_dir: Path,
                             variant: str = "base", lens: str = "logit",
                             prompt_type: str = "train") -> None:
+    """Single-variant combined curve (base or final only)."""
     path = results_dir / "layerwise.parquet"
     if not path.exists():
         print(f"[viz] {path} not found — skipping layer top-1 combined figure.")
         return
 
     df = pd.read_parquet(path)
-    sub = df[(df["variant"] == variant) & (df["lens"] == lens)
-             & (df["prompt_type"] == prompt_type)]
-    if sub.empty:
+    pooled = _layer_top1_pooled(df, variant, lens, prompt_type)
+    if pooled.empty:
         print("[viz] no rows for layer top-1 combined figure — skipping.")
         return
 
-    # Pool every prompt equally (not an unweighted mean of condition curves).
-    pooled = (sub.groupby("layer", as_index=False)
-              .agg(pct_top1=("in_top_1", "mean"), n_prompts=("in_top_1", "size")))
-    pooled["pct_top1"] *= 100.0
     n_layers = int(pooled["layer"].max())
     layers = np.arange(n_layers + 1)
 
@@ -380,9 +395,55 @@ def fig_layer_top1_combined(results_dir: Path, figures_dir: Path,
     print(f"[viz] saved {out}")
 
 
+def fig_layer_top1_combined_comparison(results_dir: Path, figures_dir: Path,
+                                       lens: str = "logit",
+                                       prompt_type: str = "train") -> None:
+    """Grouped bars: before vs after LoRA, all conditions pooled."""
+    path = results_dir / "layerwise.parquet"
+    if not path.exists():
+        print(f"[viz] {path} not found — skipping layer top-1 comparison figure.")
+        return
+
+    df = pd.read_parquet(path)
+    base = _layer_top1_pooled(df, "base", lens, prompt_type)
+    final = _layer_top1_pooled(df, "final", lens, prompt_type)
+    if base.empty or final.empty:
+        print("[viz] missing base or final rows — skipping layer top-1 comparison figure.")
+        return
+
+    merged = base.merge(final, on="layer", suffixes=("_base", "_final"))
+    n_layers = int(merged["layer"].max())
+    layers = np.arange(n_layers + 1)
+    width = 0.38
+
+    fig, ax = plt.subplots(figsize=(3.5, 2.8))
+    ax.bar(merged["layer"] - width / 2, merged["pct_top1_base"], width,
+           color="#BBBBBB", alpha=0.9, edgecolor="white", linewidth=0.4,
+           label="Before LoRA (base)")
+    ax.bar(merged["layer"] + width / 2, merged["pct_top1_final"], width,
+           color="#0072B2", alpha=0.9, edgecolor="white", linewidth=0.4,
+           label="After LoRA (final)")
+    ax.set_xlabel("Transformer layer")
+    ax.set_ylabel("% of facts with correct answer\n(rank-1 at this layer)")
+    ax.set_title(f"Layer-wise accuracy — before vs after LoRA ({lens} lens)")
+    ax.set_xlim(-0.5, n_layers + 0.5)
+    ax.set_xticks(layers[::max(1, len(layers) // 8)])
+    ymax = max(merged["pct_top1_base"].max(), merged["pct_top1_final"].max())
+    ax.set_ylim(0, min(105, ymax * 1.15 + 1))
+    ax.legend(loc="upper left", fontsize=7)
+
+    fig.tight_layout(pad=0.5)
+    suffix = "" if lens == "logit" else f"_{lens}"
+    out = figures_dir / f"fig_layer_top1_combined_comparison{suffix}.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[viz] saved {out}")
+
+
 def fig_layer_top1_by_condition(results_dir: Path, figures_dir: Path,
                                 variant: str = "base", lens: str = "logit",
                                 prompt_type: str = "train") -> None:
+    """Single-variant curves by condition (base or final only)."""
     path = results_dir / "layerwise.parquet"
     if not path.exists():
         print(f"[viz] {path} not found — skipping layer top-1 by-condition figure.")
@@ -417,6 +478,68 @@ def fig_layer_top1_by_condition(results_dir: Path, figures_dir: Path,
     fig.tight_layout(pad=0.5)
     suffix = "" if (variant == "base" and lens == "logit") else f"_{variant}_{lens}"
     out = figures_dir / f"fig_layer_top1_by_condition{suffix}.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[viz] saved {out}")
+
+
+def fig_layer_top1_by_condition_comparison(results_dir: Path, figures_dir: Path,
+                                           lens: str = "logit",
+                                           prompt_type: str = "train") -> None:
+    """Four condition curves × two variants: dashed = before LoRA, solid = after."""
+    path = results_dir / "layerwise.parquet"
+    if not path.exists():
+        print(f"[viz] {path} not found — skipping layer top-1 by-condition comparison.")
+        return
+
+    df = pd.read_parquet(path)
+    base = _layer_top1_curve(df, "base", lens, prompt_type)
+    final = _layer_top1_curve(df, "final", lens, prompt_type)
+    if base.empty or final.empty:
+        print("[viz] missing base or final rows — skipping by-condition comparison.")
+        return
+
+    n_layers = int(max(base["layer"].max(), final["layer"].max()))
+    ymax = min(105, max(base["pct_top1"].max(), final["pct_top1"].max()) * 1.15 + 1)
+
+    fig, ax = plt.subplots(figsize=(3.5, 2.8))
+    for cond in COND_ORDER:
+        b = base[base["condition"] == cond].sort_values("layer")
+        f = final[final["condition"] == cond].sort_values("layer")
+        if b.empty and f.empty:
+            continue
+        if not b.empty:
+            ax.plot(b["layer"], b["pct_top1"],
+                    color=COLORS[cond], linestyle="--", linewidth=1.4,
+                    alpha=0.75, label="_nolegend_")
+        if not f.empty:
+            ax.plot(f["layer"], f["pct_top1"],
+                    color=COLORS[cond], linestyle=LINE_STYLES[cond],
+                    marker=MARKERS[cond], markevery=MARKER_EVERY, markersize=4,
+                    linewidth=1.8, label=CONDITION_LABELS[cond])
+
+    # Condition legend (solid lines) + variant style legend (dashed vs solid).
+    cond_handles, cond_labels = ax.get_legend_handles_labels()
+    style_handles = [
+        plt.Line2D([0], [0], color="#333333", linestyle="--", linewidth=1.4,
+                   label="Before LoRA (base)"),
+        plt.Line2D([0], [0], color="#333333", linestyle="-", linewidth=1.8,
+                   label="After LoRA (final)"),
+    ]
+    leg1 = ax.legend(cond_handles, cond_labels, loc="upper left", fontsize=7)
+    ax.add_artist(leg1)
+    ax.legend(handles=style_handles, loc="center left", fontsize=7,
+              bbox_to_anchor=(0.0, 0.35))
+
+    ax.set_xlabel("Transformer layer")
+    ax.set_ylabel("% of facts with correct answer\n(rank-1 at this layer)")
+    ax.set_title(f"Layer-wise accuracy by condition — before vs after ({lens} lens)")
+    ax.set_xlim(0, n_layers)
+    ax.set_ylim(0, ymax)
+
+    fig.tight_layout(pad=0.5)
+    suffix = "" if lens == "logit" else f"_{lens}"
+    out = figures_dir / f"fig_layer_top1_by_condition_comparison{suffix}.pdf"
     fig.savefig(out)
     plt.close(fig)
     print(f"[viz] saved {out}")
@@ -697,11 +820,10 @@ def _run(results_dir: Path, figures_dir: Path, output_dir: Path | None = None,
     fig_patching(results_dir, figures_dir)
     fig_rank_ablation(results_dir, figures_dir)
     fig_locality(results_dir, figures_dir)
-    fig_layer_top1_combined(results_dir, figures_dir)
-    fig_layer_top1_by_condition(results_dir, figures_dir)
-    fig_layer_top1_combined(results_dir, figures_dir, lens="tuned")
-    fig_layer_top1_by_condition(results_dir, figures_dir, lens="tuned")
-    fig_layer_top1_by_condition(results_dir, figures_dir, variant="final")
+    fig_layer_top1_combined_comparison(results_dir, figures_dir)
+    fig_layer_top1_by_condition_comparison(results_dir, figures_dir)
+    fig_layer_top1_combined_comparison(results_dir, figures_dir, lens="tuned")
+    fig_layer_top1_by_condition_comparison(results_dir, figures_dir, lens="tuned")
     fig_baseline_distribution(output_dir, figures_dir, latent_threshold)
     print_latex_tables(results_dir)
 
