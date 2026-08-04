@@ -100,6 +100,7 @@ def _false_ids(sub: pd.DataFrame, device) -> torch.Tensor:
     return torch.tensor(vals, device=device, dtype=torch.long)
 
 
+@torch.no_grad()
 def _patch_one_checkpoint(base_model, lora_model, base_layers, n_layers,
                            sample, tokenizer, cfg, device, variant, step):
     """Run patching for a single LoRA checkpoint; return list of row dicts."""
@@ -122,6 +123,7 @@ def _patch_one_checkpoint(base_model, lora_model, base_layers, n_layers,
     return rows
 
 
+@torch.no_grad()
 def _run_controls(base_model, lora_model, base_layers, n_layers, sample, tokenizer,
                   cfg, device, variant, step):
     """self: base patched into itself, must reproduce the unpatched output; mismatched:

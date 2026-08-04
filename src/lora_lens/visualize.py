@@ -125,7 +125,8 @@ def fig_delta_logprob(results_dir: Path, figures_dir: Path) -> None:
     ax.set_xlabel("Transformer layer")
     ax.set_ylabel("Δ mean log-probability\n(LoRA − base)")
     ax.set_title("Where does LoRA add log-probability?")
-    ax.set_xlim(0, 24)
+    # From the data, not hardcoded to Pythia-410m's 24 layers (dev's 160m has 12).
+    ax.set_xlim(0, int(delta["layer"].max()) if not delta.empty else 24)
     ax.legend(loc="upper left")
 
     fig.tight_layout(pad=0.5)
@@ -155,11 +156,10 @@ def fig_patching(results_dir: Path, figures_dir: Path) -> None:
     final = summary[summary["variant"] == "final"].copy()
     present = [c for c in COND_ORDER if c in final["condition"].values]
 
-    # Fix the y-range up front so the "n/N" annotations all land at the same
-    # height; otherwise each boxplot's autoscale (as points are added one
-    # condition at a time) leaves earlier low-range conditions (e.g. "known",
-    # which rarely needs a flip) with labels far below the rest.
-    ax_box.set_ylim(-1, 26)
+    # Fixed y-range (from the data, not hardcoded to 24 layers) so "n/N" labels
+    # all land at the same height instead of the boxplot autoscale moving per box.
+    n_layers_patch = int(df["layer"][df["layer"] >= 0].max()) if (df["layer"] >= 0).any() else 24
+    ax_box.set_ylim(-1, n_layers_patch + 2)
 
     for i, cond in enumerate(present):
         sub = final[final["condition"] == cond]["first_flip_layer"].dropna()
@@ -190,7 +190,10 @@ def fig_patching(results_dir: Path, figures_dir: Path) -> None:
     ax_box.set_title("Causal locus of LoRA update")
 
     # ── Right panel: count of flipped facts vs training step ──────────────────
-    # Known is trivially always 100 (already correct); omit it.
+    # Known is omitted (trivially always n_cap); n_cap is patching.max_facts_per_
+    # condition, read from the data rather than assumed to be 100.
+    n_cap = int(final[final["condition"] != "known"].groupby("condition").size().max()
+               or 100)
     for cond in [c for c in COND_ORDER if c != "known"]:
         sub = (summary[(summary["condition"] == cond) & (summary["variant"] != "final")]
                .groupby("step")["first_flip_layer"]
@@ -208,9 +211,9 @@ def fig_patching(results_dir: Path, figures_dir: Path) -> None:
                     label=CONDITION_LABELS[cond])
 
     ax_dyn.set_xlabel("Training step")
-    ax_dyn.set_ylabel("Facts where patching flips\nprediction (out of 100)")
+    ax_dyn.set_ylabel(f"Facts where patching flips\nprediction (out of {n_cap})")
     ax_dyn.set_title("Learning dynamics")
-    ax_dyn.set_ylim(0, 100)
+    ax_dyn.set_ylim(0, n_cap)
     ax_dyn.legend()
 
     fig.tight_layout(pad=0.4, w_pad=1.5)
@@ -273,7 +276,11 @@ def fig_rank_ablation(results_dir: Path, figures_dir: Path) -> None:
     ax_layer.set_ylabel("Mean first-appearance layer")
     ax_layer.set_title("Emergence depth vs rank")
     ax_layer.set_xticks(ranks_ordered)
-    ax_layer.set_ylim(16, 24)
+    # From the data, not hardcoded to the 410m run's observed 16-24 range.
+    depths = df[df["prompt_type"] == "train"]["mean_first_layer"].dropna()
+    if not depths.empty:
+        pad = max(1.0, (depths.max() - depths.min()) * 0.15)
+        ax_layer.set_ylim(depths.min() - pad, depths.max() + pad)
     ax_layer.legend()
 
     fig.tight_layout(pad=0.4, w_pad=1.5)
@@ -645,15 +652,20 @@ def print_latex_tables(results_dir: Path) -> None:
         print(r"""\begin{table}[t]
 \centering\small
 \caption{Logit-lens results before and after LoRA fine-tuning (Pythia-410m-deduped, $r=16$).
-\emph{First layer $\Delta$} = shift in mean first-appearance layer (negative = earlier).
+\emph{First layer $\Delta$} = shift in mean first-appearance layer (negative = earlier),
+with the number of prompts each side's mean is computed over (base$\to$LoRA); the mean
+only exists for prompts whose answer ever reaches top-1, so wildly unequal counts mean
+the shift is not a like-for-like comparison. Base train-prompt Acc@1 for known/latent
+is definitional (the selection rule), not a measurement.
 Para.\ = held-out paraphrase prompts.}
 \label{tab:main_results}
 \begin{tabular}{llccccc}
 \toprule
  & & \multicolumn{2}{c}{\textbf{Acc@1}} & \multicolumn{2}{c}{\textbf{Mean log-prob}} & \textbf{First layer} \\
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
-\textbf{Condition} & \textbf{Prompts} & Base & LoRA & Base & LoRA & $\Delta$ \\
+\textbf{Condition} & \textbf{Prompts} & Base & LoRA & Base & LoRA & $\Delta$ ($n$) \\
 \midrule""")
+        has_n = "n_first_layer" in s.columns
         for label_cond, label_ptype, cond, ptype in rows:
             b = s[(s["variant"] == "base") & (s["condition"] == cond) & (s["prompt_type"] == ptype)]
             f = s[(s["variant"] == "final") & (s["condition"] == cond) & (s["prompt_type"] == ptype)]
@@ -662,10 +674,12 @@ Para.\ = held-out paraphrase prompts.}
             b, f = b.iloc[0], f.iloc[0]
             shift = f["mean_first_layer"] - b["mean_first_layer"]
             sign = "+" if shift >= 0 else ""
+            shift_str = "--" if pd.isna(shift) else f"{sign}{shift:.1f}"
+            n_str = f" ({int(b['n_first_layer'])}$\\to${int(f['n_first_layer'])})" if has_n else ""
             print(f"{label_cond} & {label_ptype} & "
                   f"{b['final_accuracy']:.3f} & {f['final_accuracy']:.3f} & "
                   f"{b['mean_final_logprob']:.2f} & {f['mean_final_logprob']:.2f} & "
-                  f"{sign}{shift:.1f} \\\\")
+                  f"{shift_str}{n_str} \\\\")
         print(r"""\bottomrule
 \end{tabular}
 \end{table}""")
@@ -709,28 +723,33 @@ the layer-wise trajectories are not an artifact of the base model's raw unembedd
     if patch_path.exists():
         p = pd.read_csv(patch_path)
         p = p[(p["layer"] == -1) & (p["variant"] == "final")]
+        # n_flipped = non-null first_flip_layer; n_total = every patched fact,
+        # flipped or not (previously hardcoded "/100", wrong for any other
+        # patching.max_facts_per_condition, e.g. dev.yaml's 20).
         pat = (p.groupby("condition")["first_flip_layer"]
-                .agg(mean="mean", median="median", count="count")
+                .agg(mean="mean", median="median", n_flipped="count")
                 .reindex(COND_ORDER))
+        pat["n_total"] = p.groupby("condition").size().reindex(COND_ORDER)
 
         print("\n% -- Table 2: Causal patching -----------------------------------")
         print(r"""\begin{table}[t]
 \centering\small
 \caption{Activation patching at the final LoRA checkpoint ($r=16$).
-\emph{Flipped} = facts (out of 100) where any single-layer patch causes the base
-model to predict the target answer.}
+\emph{Flipped} = facts where any single-layer patch causes the base model to
+predict the target answer.}
 \label{tab:patching}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Condition} & \textbf{Flipped} & \textbf{Mean first-flip layer} & \textbf{Median} \\
 \midrule""")
         for cond, label in [(c, CONDITION_LABELS[c]) for c in COND_ORDER]:
-            if cond not in pat.index:
+            if cond not in pat.index or pd.isna(pat.loc[cond, "n_total"]):
                 continue
             r = pat.loc[cond]
-            if pd.isna(r["count"]):
-                continue
-            print(f"{label} & {int(r['count'])}/100 & {r['mean']:.2f} & {r['median']:.0f} \\\\")
+            mean_str = "--" if pd.isna(r["mean"]) else f"{r['mean']:.2f}"
+            median_str = "--" if pd.isna(r["median"]) else f"{r['median']:.0f}"
+            print(f"{label} & {int(r['n_flipped'])}/{int(r['n_total'])} & "
+                  f"{mean_str} & {median_str} \\\\")
         print(r"""\bottomrule
 \end{tabular}
 \end{table}""")

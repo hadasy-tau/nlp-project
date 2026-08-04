@@ -16,10 +16,21 @@ report + LaTeX snippet.
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+
+def _utf8_stdout() -> None:
+    """UTF-8 stdout so a cp1252 console cannot kill the report on a print."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
 
 COND_ORDER = ["known", "latent", "unknown", "synthetic"]
 CONDITION_LABELS = {
@@ -49,6 +60,7 @@ def _per_seed_summary(output_dir: Path, seed: int) -> pd.DataFrame:
 
 
 def main(argv=None) -> None:
+    _utf8_stdout()
     ap = argparse.ArgumentParser(description="Aggregate multi-seed lora_lens results")
     ap.add_argument("--output-prefix", default="outputs_seed",
                     help="output_dir for seed S is '<prefix><S>' (must match run_multi_seed.py)")
@@ -85,7 +97,9 @@ def main(argv=None) -> None:
     print(agg.to_string(index=False))
     print(f"\n[aggregate] Written to {agg_path}")
 
-    print("\n% ── Table: Multi-seed robustness of causal encoding depth ────────")
+    # n_total, not n_seeds: the caption reports facts per condition.
+    n_facts = int(per_seed_df["n_total"].max()) if "n_total" in per_seed_df else 0
+    print("\n% -- Table: Multi-seed robustness of causal encoding depth --------")
     print(r"""\begin{table}[t]
 \centering\small
 \caption{Median causal first-flip layer, mean $\pm$ std across %d independent
@@ -96,7 +110,7 @@ flip at any layer, mean $\pm$ std across seeds.}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Condition} & \textbf{Median first-flip layer} & \textbf{Flip rate} \\
-\midrule""" % (len(args.seeds), int(agg["n_seeds"].iloc[0]) if len(agg) else 0))
+\midrule""" % (len(args.seeds), n_facts))
     for _, row in agg.iterrows():
         std = row["median_std"] if not np.isnan(row["median_std"]) else 0.0
         fr_std = row["flip_rate_std"] if not np.isnan(row["flip_rate_std"]) else 0.0
