@@ -107,6 +107,13 @@ Everything lives in the YAML configs ([configs/default.yaml](configs/default.yam
   to the model name. If no pretrained tuned lens exists for the model, the
   pipeline warns and continues with the logit lens only.
 
+## Running on Colab (primary)
+
+Use [colab/colab_pipeline.ipynb](colab/colab_pipeline.ipynb) with an **A100**
+runtime. It clones the repo, installs requirements, and runs the pipeline with
+`output_dir` on Google Drive, so a disconnected session resumes by re-running
+with `--stages` from the last completed stage.
+
 ## Running on Kaggle
 
 Use [kaggle/kaggle_pipeline.ipynb](kaggle/kaggle_pipeline.ipynb). Enable a GPU

@@ -21,6 +21,7 @@ data:
     target_true: requested_rewrite.target_true.str
     target_false: requested_rewrite.target_new.str
     relation: requested_rewrite.relation_id
+    neighborhood: neighborhood_prompts   # so dev exercises score_locality too
   paraphrase_templates_csv: additional_data/paraphreases_per_prompt.csv
   min_known_facts: 10      # 160m knows ~18 of 905 facts; dev only exercises code paths
   n_per_condition: 50
@@ -61,3 +62,10 @@ patching:
   batch_size: 8
   max_facts_per_condition: 20
   controls: true
+
+# Without this section --stages all crashes (Cfg raises on missing keys).
+rank_ablation:
+  enabled: true
+  ranks: [4, 8]
+  alpha_multiplier: 2
+  epochs: 1

@@ -79,7 +79,7 @@ def train_lora(cfg, tokenizer, conditions: pd.DataFrame, device) -> Path:
                         collate_fn=make_collate(tokenizer.pad_token_id))
     opt = torch.optim.AdamW((p for p in model.parameters() if p.requires_grad), lr=cfg.lora.lr)
     use_amp = device.type == "cuda"
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
 
     step = 0
     log_rows = []
