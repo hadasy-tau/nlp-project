@@ -154,8 +154,7 @@ def summarize(layerwise: pd.DataFrame) -> pd.DataFrame:
     """Vectorized per-prompt then per-group aggregation (fast on millions of rows).
 
     mean_first_layer averages only over prompts that ever reach top-1, so it is
-    reported with its denominator (n_first_layer) and frac_never_top1; for a paired
-    per-fact comparison use stats.py's Wilcoxon on _paired_first_layer.
+    reported with its denominator (n_first_layer) and frac_never_top1.
     """
     n_layers = layerwise["layer"].max()
     keys = ["variant", "step", "condition", "prompt_type", "lens", "prompt_idx"]

@@ -19,8 +19,7 @@ from .utils import (configure_stdout, disable_tf32, free_model, load_model, load
                     resolve_device, set_seed)
 
 STAGES = ["prepare_data", "make_synthetic", "score_base", "build_conditions", "train_lora",
-          "analyze", "patch", "trajectory", "stats", "score_locality", "rank_ablation",
-          "visualize"]
+          "analyze", "patch", "trajectory", "rank_ablation", "visualize"]
 
 
 def _out(cfg) -> Path:
@@ -115,19 +114,6 @@ def stage_trajectory(cfg, tokenizer, device):
     from .trajectory import run_trajectory
 
     run_trajectory(cfg)
-
-
-def stage_stats(cfg, tokenizer, device):
-    from .stats import run_stats
-
-    run_stats(cfg)
-
-
-def stage_score_locality(cfg, tokenizer, device):
-    from .locality import run_locality_scoring
-
-    conditions = pd.read_parquet(_out(cfg) / "conditions.parquet")
-    run_locality_scoring(cfg, tokenizer, conditions, device)
 
 
 def stage_rank_ablation(cfg, tokenizer, device):
