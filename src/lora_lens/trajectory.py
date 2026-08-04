@@ -6,10 +6,14 @@ base->LoRA transition between classes.
 
 Writes trajectory.parquet, trajectory_summary.csv, trajectory_transitions.csv,
 trajectory_moderator.csv and trajectory_vs_patching.csv under <output_dir>/results/.
+
+Standalone (flat results dir, mirroring visualize.py):
+    python -m lora_lens.trajectory results/run31_07_02
 """
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +22,7 @@ import pandas as pd
 KEYS = ["variant", "step", "lens", "prompt_idx"]
 COND_ORDER = ["known", "latent", "unknown", "synthetic"]
 CLASS_ORDER = ["never", "transient", "late_only", "persistent"]
+LENSES = ("logit", "tuned")
 
 
 def per_prompt_trajectory(layerwise: pd.DataFrame) -> pd.DataFrame:
@@ -108,7 +113,7 @@ def transitions(traj: pd.DataFrame, lens: str = "logit",
             for final_cls in CLASS_ORDER:
                 n = int(((wide["base"] == base_cls) & (wide["final"] == final_cls)).sum())
                 if n:
-                    rows.append({"condition": cond, "base_class": base_cls,
+                    rows.append({"lens": lens, "condition": cond, "base_class": base_cls,
                                  "final_class": final_cls, "n": n})
 
         b, f = wide["base"].isin(survives), wide["final"].isin(survives)
@@ -118,7 +123,8 @@ def transitions(traj: pd.DataFrame, lens: str = "logit",
         if n10 or n01:
             res = sm_mcnemar(np.array([[n11, n10], [n01, n00]]), exact=True)
             stat, pval = float(res.statistic), float(res.pvalue)
-        rows.append({"condition": cond, "base_class": "ANY", "final_class": "SURVIVES",
+        rows.append({"lens": lens, "condition": cond, "base_class": "ANY",
+                     "final_class": "SURVIVES",
                      "n": len(wide), "n11": n11, "n10": n10, "n01": n01, "n00": n00,
                      "mcnemar_stat": stat, "p_value": pval})
     return pd.DataFrame(rows)
@@ -133,6 +139,29 @@ def _baseline_logprob(layerwise: pd.DataFrame, lens: str, prompt_type: str) -> p
     return base.set_index("prompt_idx")["answer_logprob"].rename("baseline_logprob")
 
 
+def moderator_data(traj: pd.DataFrame, layerwise: pd.DataFrame, lens: str = "logit",
+                   prompt_type: str = "train") -> pd.DataFrame:
+    """Per-prompt join of baseline log-prob with base/final settle layers (and shift).
+
+    Shared by moderator_regression (OLS) and fig_moderator_scatter (points).
+    """
+    sub = traj[(traj["lens"] == lens) & (traj["prompt_type"] == prompt_type) &
+               (traj["variant"].isin(["base", "final"]))]
+    wide = sub.pivot_table(index="prompt_idx", columns="variant", values="settle_layer")
+    if wide.empty or not {"base", "final"}.issubset(wide.columns):
+        return pd.DataFrame()
+    meta = (sub[sub["variant"] == "final"][["prompt_idx", "fact_id", "condition"]]
+            .drop_duplicates("prompt_idx")
+            .set_index("prompt_idx"))
+    wide = wide.join(meta, how="left")
+    wide = wide.join(_baseline_logprob(layerwise, lens, prompt_type), how="inner")
+    wide = wide.rename(columns={"base": "base_settle", "final": "final_settle"})
+    wide["shift"] = wide["final_settle"] - wide["base_settle"]
+    wide["lens"] = lens
+    wide["prompt_type"] = prompt_type
+    return wide.reset_index()
+
+
 def moderator_regression(traj: pd.DataFrame, layerwise: pd.DataFrame, lens: str = "logit",
                          prompt_type: str = "train") -> pd.DataFrame:
     """Regress post-LoRA settle depth on continuous baseline log-prob, replacing the
@@ -140,16 +169,12 @@ def moderator_regression(traj: pd.DataFrame, layerwise: pd.DataFrame, lens: str 
     fact to settle in both variants, which in base is almost only `known`."""
     import statsmodels.api as sm
 
-    sub = traj[(traj["lens"] == lens) & (traj["prompt_type"] == prompt_type) &
-               (traj["variant"].isin(["base", "final"]))]
-    wide = sub.pivot_table(index="prompt_idx", columns="variant", values="settle_layer")
-    if wide.empty or not {"base", "final"}.issubset(wide.columns):
+    wide = moderator_data(traj, layerwise, lens=lens, prompt_type=prompt_type)
+    if wide.empty:
         return pd.DataFrame()
-    wide = wide.join(_baseline_logprob(layerwise, lens, prompt_type), how="inner")
-    wide["shift"] = wide["final"] - wide["base"]
 
     rows = []
-    for model, outcome in (("depth_final", "final"), ("shift", "shift")):
+    for model, outcome in (("depth_final", "final_settle"), ("shift", "shift")):
         data = wide[[outcome, "baseline_logprob"]].dropna()
         if len(data) < 10:
             continue
@@ -157,7 +182,8 @@ def moderator_regression(traj: pd.DataFrame, layerwise: pd.DataFrame, lens: str 
                      sm.add_constant(data[["baseline_logprob"]])).fit(cov_type="HC1")
         ci = fit.conf_int()
         for name in fit.params.index:
-            rows.append({"model": model, "term": name, "coef": float(fit.params[name]),
+            rows.append({"lens": lens, "model": model, "term": name,
+                         "coef": float(fit.params[name]),
                          "se": float(fit.bse[name]), "p_value": float(fit.pvalues[name]),
                          "ci_lo": float(ci.loc[name, 0]), "ci_hi": float(ci.loc[name, 1]),
                          "n": int(fit.nobs), "r_squared": float(fit.rsquared)})
@@ -173,9 +199,11 @@ def vs_patching(traj: pd.DataFrame, patching: pd.DataFrame, lens: str = "logit",
     flips = patching[(patching["layer"] == -1) & (patching["variant"] == "final")]
     if final_traj.empty or flips.empty:
         return pd.DataFrame()
-    return final_traj[["fact_id", "condition", "first_layer", "settle_layer",
-                       "traj_class"]].merge(
+    out = final_traj[["fact_id", "condition", "first_layer", "settle_layer",
+                      "traj_class"]].merge(
         flips[["fact_id", "first_flip_layer", "flipped"]], on="fact_id", how="inner")
+    out["lens"] = lens
+    return out
 
 
 def depth_agreement(joined: pd.DataFrame) -> pd.DataFrame:
@@ -200,6 +228,11 @@ def depth_agreement(joined: pd.DataFrame) -> pd.DataFrame:
 
 def run_trajectory(cfg) -> None:
     results_dir = Path(cfg.output_dir) / "results"
+    _run_trajectory(results_dir)
+
+
+def _run_trajectory(results_dir: Path) -> None:
+    """Core trajectory logic against a flat results directory."""
     layerwise_path = results_dir / "layerwise.parquet"
     if not layerwise_path.exists():
         raise SystemExit(f"[trajectory] {layerwise_path} not found -- run analyze first.")
@@ -216,27 +249,42 @@ def run_trajectory(cfg) -> None:
     print(show[["variant", "condition"] + CLASS_ORDER +
                ["mean_settle_layer", "n_settle_layer"]].to_string(index=False))
 
-    trans = transitions(traj)
-    trans.to_csv(results_dir / "trajectory_transitions.csv", index=False)
-    surv = trans[trans["base_class"] == "ANY"]
-    if not surv.empty:
-        print("\n[trajectory] Does the answer survive to the output? (McNemar, base vs final)")
-        print(surv[["condition", "n11", "n10", "n01", "n00", "p_value"]]
-              .to_string(index=False))
+    # Both lenses: tag rows with lens column and concatenate.
+    trans_parts = [transitions(traj, lens=lens) for lens in LENSES]
+    trans = pd.concat([t for t in trans_parts if not t.empty], ignore_index=True)
+    if not trans.empty:
+        trans.to_csv(results_dir / "trajectory_transitions.csv", index=False)
+        surv = trans[(trans["base_class"] == "ANY") & (trans["lens"] == "logit")]
+        if not surv.empty:
+            print("\n[trajectory] Does the answer survive to the output? "
+                  "(McNemar, base vs final, logit)")
+            print(surv[["condition", "n11", "n10", "n01", "n00", "p_value"]]
+                  .to_string(index=False))
 
-    mod = moderator_regression(traj, layerwise)
+    mod_parts = [moderator_regression(traj, layerwise, lens=lens) for lens in LENSES]
+    mod = pd.concat([m for m in mod_parts if not m.empty], ignore_index=True)
     if not mod.empty:
         mod.to_csv(results_dir / "trajectory_moderator.csv", index=False)
         print("\n[trajectory] Settle depth ~ baseline log-prob (OLS, HC1); depth_final is "
               "primary, shift is range-restricted:")
-        print(mod.to_string(index=False))
+        print(mod[mod["lens"] == "logit"].to_string(index=False))
 
     patch_path = results_dir / "patching.csv"
     if patch_path.exists():
-        joined = vs_patching(traj, pd.read_csv(patch_path))
+        patch_df = pd.read_csv(patch_path)
+        join_parts = [vs_patching(traj, patch_df, lens=lens) for lens in LENSES]
+        joined = pd.concat([j for j in join_parts if not j.empty], ignore_index=True)
         if not joined.empty:
             joined.to_csv(results_dir / "trajectory_vs_patching.csv", index=False)
-            print("\n[trajectory] Lens depth vs causal first-flip layer:")
-            print(depth_agreement(joined).to_string(index=False))
+            print("\n[trajectory] Lens depth vs causal first-flip layer (logit):")
+            print(depth_agreement(joined[joined["lens"] == "logit"]).to_string(index=False))
 
     print(f"\n[trajectory] Full results in {results_dir}")
+
+
+if __name__ == "__main__":
+    from .utils import configure_stdout
+
+    configure_stdout()
+    results = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("outputs/results")
+    _run_trajectory(results)

@@ -224,7 +224,8 @@ def report_highlights(summary: pd.DataFrame) -> None:
               f"first-layer shift {shift:+.1f}  (n={n_b}→{n_f}){warn}")
 
     # Highlight the unknown vs known paraphrase contrast.
-    # (Synthetic facts have no CounterFact paraphrase prompts, so that condition is absent here.)
+    # Synthetic facts now also carry held-out paraphrases (make_synthetic in data.py);
+    # older runs without them simply lack a synthetic paraphrase row here.
     para = logit[logit["prompt_type"] == "paraphrase"].set_index("condition")
     if "unknown" in para.index and "known" in para.index:
         unk_gain = para.loc["unknown", "acc_gain"]
