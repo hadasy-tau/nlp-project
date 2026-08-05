@@ -1,0 +1,72 @@
+seed: 42
+output_dir: /content/drive/MyDrive/nlp_outputs
+model:
+  name: EleutherAI/pythia-410m-deduped
+  revision: null
+  inference_dtype: float32
+  device: auto
+data:
+  dataset: azhx/counterfact
+  split: train
+  max_records: null
+  fields:
+    prompt: requested_rewrite.prompt
+    subject: requested_rewrite.subject
+    target_true: requested_rewrite.target_true.str
+    target_false: requested_rewrite.target_new.str
+    relation: requested_rewrite.relation_id
+    neighborhood: neighborhood_prompts
+  paraphrase_templates_csv: additional_data/paraphreases_per_prompt.csv
+  min_known_facts: 300
+  n_per_condition: 500
+  max_relation_fraction: 0.25
+  synthetic:
+    n_facts: 200
+    seed: 0
+    token_length_low_pct: 5
+    token_length_high_pct: 95
+    max_object_relation_fraction: 0.3
+    max_object_global_fraction: 0.15
+    max_pair_fraction: 0.15
+    syllable_tolerance: 2.5
+scoring:
+  batch_size: 64
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+  - query_key_value
+  lr: 0.0001
+  epochs: 5
+  batch_size: 16
+  checkpoint_every: 50
+  max_grad_norm: 1.0
+lens:
+  use_logit: true
+  use_tuned: true
+  tuned_lens_id: null
+analysis:
+  batch_size: 32
+  allow_reconcile: false
+  logprob_atol: 0.05
+  top_k:
+  - 1
+  - 5
+  - 10
+  checkpoints: all
+  eval_paraphrases: true
+patching:
+  enabled: true
+  batch_size: 16
+  max_facts_per_condition: 100
+  controls: true
+rank_ablation:
+  enabled: true
+  ranks:
+  - 4
+  - 8
+  - 16
+  - 32
+  alpha_multiplier: 2
+  epochs: 5

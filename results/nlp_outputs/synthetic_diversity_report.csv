@@ -1,0 +1,690 @@
+section,key1,key2,count,value
+token_length,real,mean,17606,4.400602067476997
+token_length,real,p5,17606,2.0
+token_length,real,p25,17606,3.0
+token_length,real,p50,17606,4.0
+token_length,real,p75,17606,5.0
+token_length,real,p95,17606,8.0
+token_length,synthetic,mean,200,7.21
+token_length,synthetic,p5,200,6.0
+token_length,synthetic,p25,200,7.0
+token_length,synthetic,p50,200,7.0
+token_length,synthetic,p75,200,8.0
+token_length,synthetic,p95,200,8.0
+object_frequency_by_relation,P101,mathematics,1,0.16666666666666666
+object_frequency_by_relation,P101,physics,1,0.16666666666666666
+object_frequency_by_relation,P101,animation,1,0.16666666666666666
+object_frequency_by_relation,P101,opera,1,0.16666666666666666
+object_frequency_by_relation,P101,geometry,1,0.16666666666666666
+object_frequency_by_relation,P101,physician,1,0.16666666666666666
+object_frequency_by_relation,P103,French,2,0.3333333333333333
+object_frequency_by_relation,P103,Dutch,2,0.3333333333333333
+object_frequency_by_relation,P103,Serbian,1,0.16666666666666666
+object_frequency_by_relation,P103,Russian,1,0.16666666666666666
+object_frequency_by_relation,P106,actor,2,0.3333333333333333
+object_frequency_by_relation,P106,poet,2,0.3333333333333333
+object_frequency_by_relation,P106,politician,1,0.16666666666666666
+object_frequency_by_relation,P106,composer,1,0.16666666666666666
+object_frequency_by_relation,P108,BBC,2,0.3333333333333333
+object_frequency_by_relation,P108,IBM,2,0.3333333333333333
+object_frequency_by_relation,P108,Microsoft,1,0.16666666666666666
+object_frequency_by_relation,P108,ESPN,1,0.16666666666666666
+object_frequency_by_relation,P127,Detroit,2,0.3333333333333333
+object_frequency_by_relation,P127,Google,1,0.16666666666666666
+object_frequency_by_relation,P127,Berlin,1,0.16666666666666666
+object_frequency_by_relation,P127,Sony,1,0.16666666666666666
+object_frequency_by_relation,P127,Richmond,1,0.16666666666666666
+object_frequency_by_relation,P1303,piano,2,0.3333333333333333
+object_frequency_by_relation,P1303,violin,2,0.3333333333333333
+object_frequency_by_relation,P1303,guitar,2,0.3333333333333333
+object_frequency_by_relation,P131,Louisiana,1,0.16666666666666666
+object_frequency_by_relation,P131,Somerset,1,0.16666666666666666
+object_frequency_by_relation,P131,Arkansas,1,0.16666666666666666
+object_frequency_by_relation,P131,Queensland,1,0.16666666666666666
+object_frequency_by_relation,P131,Ontario,1,0.16666666666666666
+object_frequency_by_relation,P131,Pennsylvania,1,0.16666666666666666
+object_frequency_by_relation,P136,opera,2,0.3333333333333333
+object_frequency_by_relation,P136,jazz,2,0.3333333333333333
+object_frequency_by_relation,P136,thriller,1,0.16666666666666666
+object_frequency_by_relation,P136,fantasy,1,0.16666666666666666
+object_frequency_by_relation,P138,Milan,1,0.16666666666666666
+object_frequency_by_relation,P138,Arctic,1,0.16666666666666666
+object_frequency_by_relation,P138,Richmond,1,0.16666666666666666
+object_frequency_by_relation,P138,Albany,1,0.16666666666666666
+object_frequency_by_relation,P138,coffee,1,0.16666666666666666
+object_frequency_by_relation,P138,Beijing,1,0.16666666666666666
+object_frequency_by_relation,P140,Islam,2,0.3333333333333333
+object_frequency_by_relation,P140,Buddhism,2,0.3333333333333333
+object_frequency_by_relation,P140,Judaism,1,0.16666666666666666
+object_frequency_by_relation,P140,Christianity,1,0.16666666666666666
+object_frequency_by_relation,P1412,Italian,2,0.3333333333333333
+object_frequency_by_relation,P1412,Spanish,2,0.3333333333333333
+object_frequency_by_relation,P1412,Hebrew,1,0.16666666666666666
+object_frequency_by_relation,P1412,Swedish,1,0.16666666666666666
+object_frequency_by_relation,P159,Montreal,1,0.16666666666666666
+object_frequency_by_relation,P159,Chicago,1,0.16666666666666666
+object_frequency_by_relation,P159,Wellington,1,0.16666666666666666
+object_frequency_by_relation,P159,Beijing,1,0.16666666666666666
+object_frequency_by_relation,P159,Toronto,1,0.16666666666666666
+object_frequency_by_relation,P159,London,1,0.16666666666666666
+object_frequency_by_relation,P17,Syria,2,0.3333333333333333
+object_frequency_by_relation,P17,Japan,1,0.16666666666666666
+object_frequency_by_relation,P17,Netherlands,1,0.16666666666666666
+object_frequency_by_relation,P17,India,1,0.16666666666666666
+object_frequency_by_relation,P17,Australia,1,0.16666666666666666
+object_frequency_by_relation,P176,Chrysler,1,0.16666666666666666
+object_frequency_by_relation,P176,BMW,1,0.16666666666666666
+object_frequency_by_relation,P176,Toyota,1,0.16666666666666666
+object_frequency_by_relation,P176,Honda,1,0.16666666666666666
+object_frequency_by_relation,P176,Microsoft,1,0.16666666666666666
+object_frequency_by_relation,P176,Apple,1,0.16666666666666666
+object_frequency_by_relation,P178,IBM,2,0.3333333333333333
+object_frequency_by_relation,P178,Boeing,1,0.16666666666666666
+object_frequency_by_relation,P178,Google,1,0.16666666666666666
+object_frequency_by_relation,P178,Apple,1,0.16666666666666666
+object_frequency_by_relation,P178,Amazon,1,0.16666666666666666
+object_frequency_by_relation,P19,Salem,1,0.16666666666666666
+object_frequency_by_relation,P19,Ottawa,1,0.16666666666666666
+object_frequency_by_relation,P19,Pennsylvania,1,0.16666666666666666
+object_frequency_by_relation,P19,Rome,1,0.16666666666666666
+object_frequency_by_relation,P19,Miami,1,0.16666666666666666
+object_frequency_by_relation,P19,Sydney,1,0.16666666666666666
+object_frequency_by_relation,P190,Moscow,2,0.3333333333333333
+object_frequency_by_relation,P190,Lisbon,1,0.16666666666666666
+object_frequency_by_relation,P190,Warsaw,1,0.16666666666666666
+object_frequency_by_relation,P190,Budapest,1,0.16666666666666666
+object_frequency_by_relation,P190,Dublin,1,0.16666666666666666
+object_frequency_by_relation,P20,Paris,2,0.3333333333333333
+object_frequency_by_relation,P20,Mexico,1,0.16666666666666666
+object_frequency_by_relation,P20,Madrid,1,0.16666666666666666
+object_frequency_by_relation,P20,Rome,1,0.16666666666666666
+object_frequency_by_relation,P20,Wellington,1,0.16666666666666666
+object_frequency_by_relation,P264,Federal,2,0.3333333333333333
+object_frequency_by_relation,P264,Brunswick,2,0.3333333333333333
+object_frequency_by_relation,P264,Festival,1,0.16666666666666666
+object_frequency_by_relation,P264,Word,1,0.16666666666666666
+object_frequency_by_relation,P27,France,1,0.16666666666666666
+object_frequency_by_relation,P27,Iran,1,0.16666666666666666
+object_frequency_by_relation,P27,Norway,1,0.16666666666666666
+object_frequency_by_relation,P27,Bulgaria,1,0.16666666666666666
+object_frequency_by_relation,P27,Germany,1,0.16666666666666666
+object_frequency_by_relation,P27,Australia,1,0.16666666666666666
+object_frequency_by_relation,P276,Berlin,1,0.16666666666666666
+object_frequency_by_relation,P276,Rome,1,0.16666666666666666
+object_frequency_by_relation,P276,Newport,1,0.16666666666666666
+object_frequency_by_relation,P276,Hollywood,1,0.16666666666666666
+object_frequency_by_relation,P276,Nashville,1,0.16666666666666666
+object_frequency_by_relation,P276,Memphis,1,0.16666666666666666
+object_frequency_by_relation,P30,Africa,2,0.3333333333333333
+object_frequency_by_relation,P30,Europe,2,0.3333333333333333
+object_frequency_by_relation,P30,Asia,2,0.3333333333333333
+object_frequency_by_relation,P36,Manila,1,0.16666666666666666
+object_frequency_by_relation,P36,Madrid,1,0.16666666666666666
+object_frequency_by_relation,P36,Salvador,1,0.16666666666666666
+object_frequency_by_relation,P36,Stockholm,1,0.16666666666666666
+object_frequency_by_relation,P36,Brussels,1,0.16666666666666666
+object_frequency_by_relation,P36,Delhi,1,0.16666666666666666
+object_frequency_by_relation,P364,French,2,0.3333333333333333
+object_frequency_by_relation,P364,Swedish,1,0.16666666666666666
+object_frequency_by_relation,P364,Tamil,1,0.16666666666666666
+object_frequency_by_relation,P364,English,1,0.16666666666666666
+object_frequency_by_relation,P364,Sanskrit,1,0.16666666666666666
+object_frequency_by_relation,P37,Finnish,2,0.3333333333333333
+object_frequency_by_relation,P37,English,2,0.3333333333333333
+object_frequency_by_relation,P37,French,1,0.16666666666666666
+object_frequency_by_relation,P37,Dutch,1,0.16666666666666666
+object_frequency_by_relation,P39,mayor,2,0.3333333333333333
+object_frequency_by_relation,P39,bishop,2,0.3333333333333333
+object_frequency_by_relation,P39,cardinal,1,0.16666666666666666
+object_frequency_by_relation,P39,pope,1,0.16666666666666666
+object_frequency_by_relation,P407,Russian,2,0.3333333333333333
+object_frequency_by_relation,P407,Chinese,1,0.16666666666666666
+object_frequency_by_relation,P407,French,1,0.16666666666666666
+object_frequency_by_relation,P407,Italian,1,0.16666666666666666
+object_frequency_by_relation,P407,Norwegian,1,0.16666666666666666
+object_frequency_by_relation,P413,linebacker,2,0.3333333333333333
+object_frequency_by_relation,P413,midfielder,2,0.3333333333333333
+object_frequency_by_relation,P413,quarterback,1,0.16666666666666666
+object_frequency_by_relation,P413,defender,1,0.16666666666666666
+object_frequency_by_relation,P449,NBC,2,0.3333333333333333
+object_frequency_by_relation,P449,MTV,1,0.16666666666666666
+object_frequency_by_relation,P449,CBS,1,0.16666666666666666
+object_frequency_by_relation,P449,PBS,1,0.16666666666666666
+object_frequency_by_relation,P449,CNN,1,0.16666666666666666
+object_frequency_by_relation,P463,FIFA,2,0.3333333333333333
+object_frequency_by_relation,P463,NATO,2,0.3333333333333333
+object_frequency_by_relation,P463,Ministry,1,0.16666666666666666
+object_frequency_by_relation,P463,WWE,1,0.16666666666666666
+object_frequency_by_relation,P495,Malaysia,1,0.2
+object_frequency_by_relation,P495,Japan,1,0.2
+object_frequency_by_relation,P495,Italy,1,0.2
+object_frequency_by_relation,P495,India,1,0.2
+object_frequency_by_relation,P495,France,1,0.2
+object_frequency_by_relation,P641,basketball,2,0.4
+object_frequency_by_relation,P641,hockey,2,0.4
+object_frequency_by_relation,P641,football,1,0.2
+object_frequency_by_relation,P740,Mexico,1,0.2
+object_frequency_by_relation,P740,Manila,1,0.2
+object_frequency_by_relation,P740,Vancouver,1,0.2
+object_frequency_by_relation,P740,Hamilton,1,0.2
+object_frequency_by_relation,P740,Boston,1,0.2
+object_frequency_by_relation,P937,London,2,0.4
+object_frequency_by_relation,P937,Hamburg,1,0.2
+object_frequency_by_relation,P937,Berlin,1,0.2
+object_frequency_by_relation,P937,Toronto,1,0.2
+object_frequency_global,French,,6,0.03
+object_frequency_global,IBM,,4,0.02
+object_frequency_global,opera,,3,0.015
+object_frequency_global,Berlin,,3,0.015
+object_frequency_global,London,,3,0.015
+object_frequency_global,Italian,,3,0.015
+object_frequency_global,Rome,,3,0.015
+object_frequency_global,English,,3,0.015
+object_frequency_global,Russian,,3,0.015
+object_frequency_global,Dutch,,3,0.015
+object_frequency_global,BBC,,2,0.01
+object_frequency_global,Google,,2,0.01
+object_frequency_global,piano,,2,0.01
+object_frequency_global,Japan,,2,0.01
+object_frequency_global,Mexico,,2,0.01
+object_frequency_global,Federal,,2,0.01
+object_frequency_global,France,,2,0.01
+object_frequency_global,Africa,,2,0.01
+object_frequency_global,Manila,,2,0.01
+object_frequency_global,Swedish,,2,0.01
+object_frequency_global,Finnish,,2,0.01
+object_frequency_global,mayor,,2,0.01
+object_frequency_global,linebacker,,2,0.01
+object_frequency_global,FIFA,,2,0.01
+object_frequency_global,basketball,,2,0.01
+object_frequency_global,actor,,2,0.01
+object_frequency_global,violin,,2,0.01
+object_frequency_global,Islam,,2,0.01
+object_frequency_global,Madrid,,2,0.01
+object_frequency_global,Europe,,2,0.01
+object_frequency_global,bishop,,2,0.01
+object_frequency_global,midfielder,,2,0.01
+object_frequency_global,NATO,,2,0.01
+object_frequency_global,hockey,,2,0.01
+object_frequency_global,poet,,2,0.01
+object_frequency_global,Detroit,,2,0.01
+object_frequency_global,jazz,,2,0.01
+object_frequency_global,Richmond,,2,0.01
+object_frequency_global,Buddhism,,2,0.01
+object_frequency_global,Spanish,,2,0.01
+object_frequency_global,Wellington,,2,0.01
+object_frequency_global,India,,2,0.01
+object_frequency_global,Pennsylvania,,2,0.01
+object_frequency_global,Paris,,2,0.01
+object_frequency_global,Brunswick,,2,0.01
+object_frequency_global,NBC,,2,0.01
+object_frequency_global,guitar,,2,0.01
+object_frequency_global,Beijing,,2,0.01
+object_frequency_global,Syria,,2,0.01
+object_frequency_global,Moscow,,2,0.01
+object_frequency_global,Asia,,2,0.01
+object_frequency_global,Microsoft,,2,0.01
+object_frequency_global,Toronto,,2,0.01
+object_frequency_global,Apple,,2,0.01
+object_frequency_global,Australia,,2,0.01
+object_frequency_global,mathematics,,1,0.005
+object_frequency_global,politician,,1,0.005
+object_frequency_global,Louisiana,,1,0.005
+object_frequency_global,Milan,,1,0.005
+object_frequency_global,Judaism,,1,0.005
+object_frequency_global,Hebrew,,1,0.005
+object_frequency_global,Montreal,,1,0.005
+object_frequency_global,Chrysler,,1,0.005
+object_frequency_global,Salem,,1,0.005
+object_frequency_global,Lisbon,,1,0.005
+object_frequency_global,Chinese,,1,0.005
+object_frequency_global,MTV,,1,0.005
+object_frequency_global,Malaysia,,1,0.005
+object_frequency_global,physics,,1,0.005
+object_frequency_global,Somerset,,1,0.005
+object_frequency_global,Arctic,,1,0.005
+object_frequency_global,Chicago,,1,0.005
+object_frequency_global,Netherlands,,1,0.005
+object_frequency_global,BMW,,1,0.005
+object_frequency_global,Boeing,,1,0.005
+object_frequency_global,Ottawa,,1,0.005
+object_frequency_global,Warsaw,,1,0.005
+object_frequency_global,Iran,,1,0.005
+object_frequency_global,Tamil,,1,0.005
+object_frequency_global,CBS,,1,0.005
+object_frequency_global,Hamburg,,1,0.005
+object_frequency_global,animation,,1,0.005
+object_frequency_global,Serbian,,1,0.005
+object_frequency_global,Arkansas,,1,0.005
+object_frequency_global,Toyota,,1,0.005
+object_frequency_global,Budapest,,1,0.005
+object_frequency_global,Norway,,1,0.005
+object_frequency_global,Newport,,1,0.005
+object_frequency_global,Salvador,,1,0.005
+object_frequency_global,cardinal,,1,0.005
+object_frequency_global,quarterback,,1,0.005
+object_frequency_global,Italy,,1,0.005
+object_frequency_global,Vancouver,,1,0.005
+object_frequency_global,Sony,,1,0.005
+object_frequency_global,Queensland,,1,0.005
+object_frequency_global,Albany,,1,0.005
+object_frequency_global,Honda,,1,0.005
+object_frequency_global,Festival,,1,0.005
+object_frequency_global,Bulgaria,,1,0.005
+object_frequency_global,Hollywood,,1,0.005
+object_frequency_global,Stockholm,,1,0.005
+object_frequency_global,football,,1,0.005
+object_frequency_global,Hamilton,,1,0.005
+object_frequency_global,geometry,,1,0.005
+object_frequency_global,composer,,1,0.005
+object_frequency_global,Ontario,,1,0.005
+object_frequency_global,thriller,,1,0.005
+object_frequency_global,coffee,,1,0.005
+object_frequency_global,Christianity,,1,0.005
+object_frequency_global,Miami,,1,0.005
+object_frequency_global,Germany,,1,0.005
+object_frequency_global,Nashville,,1,0.005
+object_frequency_global,Brussels,,1,0.005
+object_frequency_global,Sanskrit,,1,0.005
+object_frequency_global,Norwegian,,1,0.005
+object_frequency_global,PBS,,1,0.005
+object_frequency_global,Ministry,,1,0.005
+object_frequency_global,Boston,,1,0.005
+object_frequency_global,physician,,1,0.005
+object_frequency_global,ESPN,,1,0.005
+object_frequency_global,fantasy,,1,0.005
+object_frequency_global,Amazon,,1,0.005
+object_frequency_global,Sydney,,1,0.005
+object_frequency_global,Dublin,,1,0.005
+object_frequency_global,Word,,1,0.005
+object_frequency_global,Memphis,,1,0.005
+object_frequency_global,Delhi,,1,0.005
+object_frequency_global,pope,,1,0.005
+object_frequency_global,defender,,1,0.005
+object_frequency_global,CNN,,1,0.005
+object_frequency_global,WWE,,1,0.005
+template_frequency,P101,{subject}'s domain of activity is,1,0.16666666666666666
+template_frequency,P101,{subject} works in the area of,1,0.16666666666666666
+template_frequency,P101,{subject}'s area of work is,1,0.16666666666666666
+template_frequency,P101,The expertise of {subject} is,1,0.16666666666666666
+template_frequency,P101,{subject}'s domain of work is,1,0.16666666666666666
+template_frequency,P101,The domain of activity of {subject} is,1,0.16666666666666666
+template_frequency,P103,{subject} spoke the language,1,0.16666666666666666
+template_frequency,P103,"{subject}, speaker of",1,0.16666666666666666
+template_frequency,P103,The mother tongue of {subject} is,1,0.16666666666666666
+template_frequency,P103,The native language of {subject} is,1,0.16666666666666666
+template_frequency,P103,{subject} is a native speaker of,1,0.16666666666666666
+template_frequency,P103,"{subject}, a native",1,0.16666666666666666
+template_frequency,P106,{subject}'s profession is a,1,0.16666666666666666
+template_frequency,P106,The profession of {subject} is,1,0.16666666666666666
+template_frequency,P106,The occupation of {subject} is,1,0.16666666666666666
+template_frequency,P106,{subject}'s occupation is,1,0.16666666666666666
+template_frequency,P106,"{subject}, who works as",1,0.16666666666666666
+template_frequency,P106,{subject} works as,1,0.16666666666666666
+template_frequency,P108,"{subject}, who is employed by",2,0.3333333333333333
+template_frequency,P108,{subject} is employed by,1,0.16666666666666666
+template_frequency,P108,"{subject}, who works for",1,0.16666666666666666
+template_frequency,P108,{subject} works for,1,0.16666666666666666
+template_frequency,P108,"{subject}, of",1,0.16666666666666666
+template_frequency,P127,{subject} owner,1,0.16666666666666666
+template_frequency,P127,{subject} is owned by,1,0.16666666666666666
+template_frequency,P127,{subject}'s owner,1,0.16666666666666666
+template_frequency,P127,{subject} is from,1,0.16666666666666666
+template_frequency,P127,"{subject}, from",1,0.16666666666666666
+template_frequency,P127,"{subject}, by",1,0.16666666666666666
+template_frequency,P1303,"{subject}, performing on the",1,0.16666666666666666
+template_frequency,P1303,{subject} plays the,1,0.16666666666666666
+template_frequency,P1303,{subject} plays,1,0.16666666666666666
+template_frequency,P1303,"{subject}, the",1,0.16666666666666666
+template_frequency,P1303,{subject} plays the instrument,1,0.16666666666666666
+template_frequency,P1303,"{subject}, playing the",1,0.16666666666666666
+template_frequency,P131,{subject} can be found in,2,0.3333333333333333
+template_frequency,P131,{subject} is in,1,0.16666666666666666
+template_frequency,P131,{subject} is located in,1,0.16666666666666666
+template_frequency,P131,"{subject}, in",1,0.16666666666666666
+template_frequency,P131,{subject} is within,1,0.16666666666666666
+template_frequency,P136,The genre played by {subject} is,1,0.16666666666666666
+template_frequency,P136,{subject} performs,1,0.16666666666666666
+template_frequency,P136,What does {subject} play? They play,1,0.16666666666666666
+template_frequency,P136,{subject} is known for performing,1,0.16666666666666666
+template_frequency,P136,"{subject}, who plays",1,0.16666666666666666
+template_frequency,P136,{subject} plays,1,0.16666666666666666
+template_frequency,P138,{subject} was named after,1,0.16666666666666666
+template_frequency,P138,"{subject}, named after",1,0.16666666666666666
+template_frequency,P138,"{subject}, which is named for",1,0.16666666666666666
+template_frequency,P138,"{subject}, called after",1,0.16666666666666666
+template_frequency,P138,{subject} was named for,1,0.16666666666666666
+template_frequency,P138,"{subject}, which was named after",1,0.16666666666666666
+template_frequency,P140,{subject} is affiliated with the religion,2,0.3333333333333333
+template_frequency,P140,{subject} is follower of,2,0.3333333333333333
+template_frequency,P140,The official religion of {subject} is,1,0.16666666666666666
+template_frequency,P140,{subject} follows the religion of,1,0.16666666666666666
+template_frequency,P1412,The language used by {subject} is,2,0.3333333333333333
+template_frequency,P1412,{subject} writes in,2,0.3333333333333333
+template_frequency,P1412,{subject} speaks,1,0.16666666666666666
+template_frequency,P1412,{subject} speaks the language,1,0.16666666666666666
+template_frequency,P159,The headquarters of {subject} is in,1,0.16666666666666666
+template_frequency,P159,The headquarter of {subject} is in,1,0.16666666666666666
+template_frequency,P159,{subject} is headquartered in,1,0.16666666666666666
+template_frequency,P159,{subject} is based in,1,0.16666666666666666
+template_frequency,P159,The headquarter of {subject} is located in,1,0.16666666666666666
+template_frequency,P159,"{subject}, whose headquarters are in",1,0.16666666666666666
+template_frequency,P17,{subject} is located in the country of,2,0.3333333333333333
+template_frequency,P17,{subject} is located in,1,0.16666666666666666
+template_frequency,P17,"{subject}, located in",1,0.16666666666666666
+template_frequency,P17,"{subject}, which is located in",1,0.16666666666666666
+template_frequency,P17,"{subject}, in",1,0.16666666666666666
+template_frequency,P176,"{subject}, produced by",1,0.16666666666666666
+template_frequency,P176,{subject} is developed by,1,0.16666666666666666
+template_frequency,P176,"{subject}, created by",1,0.16666666666666666
+template_frequency,P176,{subject} is produced by,1,0.16666666666666666
+template_frequency,P176,{subject} is a product of,1,0.16666666666666666
+template_frequency,P176,{subject} is created by,1,0.16666666666666666
+template_frequency,P178,"{subject}, a product of",1,0.16666666666666666
+template_frequency,P178,{subject} is a product of,1,0.16666666666666666
+template_frequency,P178,{subject} is developed by,1,0.16666666666666666
+template_frequency,P178,"{subject}, developed by",1,0.16666666666666666
+template_frequency,P178,"{subject}, created by",1,0.16666666666666666
+template_frequency,P178,{subject} is created by,1,0.16666666666666666
+template_frequency,P19,{subject} is native to,1,0.16666666666666666
+template_frequency,P19,{subject} was born in,1,0.16666666666666666
+template_frequency,P19,{subject} originates from,1,0.16666666666666666
+template_frequency,P19,{subject} was native to,1,0.16666666666666666
+template_frequency,P19,{subject} is originally from,1,0.16666666666666666
+template_frequency,P19,{subject} was originally from,1,0.16666666666666666
+template_frequency,P190,The twin city of {subject} is,2,0.3333333333333333
+template_frequency,P190,What is the twin city of {subject}? It is,2,0.3333333333333333
+template_frequency,P190,{subject} is a twin city of,2,0.3333333333333333
+template_frequency,P20,{subject} died at,1,0.16666666666666666
+template_frequency,P20,{subject} died in,1,0.16666666666666666
+template_frequency,P20,{subject} died in the city of,1,0.16666666666666666
+template_frequency,P20,{subject} succumbed at,1,0.16666666666666666
+template_frequency,P20,{subject} passed away at,1,0.16666666666666666
+template_frequency,P20,{subject} passed away in,1,0.16666666666666666
+template_frequency,P264,"{subject}, which is represented by",1,0.16666666666666666
+template_frequency,P264,{subject} is represented by record label,1,0.16666666666666666
+template_frequency,P264,{subject}'s label is,1,0.16666666666666666
+template_frequency,P264,{subject} is represented by music label,1,0.16666666666666666
+template_frequency,P264,{subject} label :,1,0.16666666666666666
+template_frequency,P264,{subject}'s record label is,1,0.16666666666666666
+template_frequency,P27,"{subject}, who has a citizenship from",1,0.16666666666666666
+template_frequency,P27,"{subject}, who holds a citizenship from",1,0.16666666666666666
+template_frequency,P27,{subject} holds a citizenship from,1,0.16666666666666666
+template_frequency,P27,"{subject}, who is a citizen of",1,0.16666666666666666
+template_frequency,P27,{subject} is a citizen of,1,0.16666666666666666
+template_frequency,P27,"{subject}, a citizen of",1,0.16666666666666666
+template_frequency,P276,{subject} is in,2,0.3333333333333333
+template_frequency,P276,The location of {subject} is,1,0.16666666666666666
+template_frequency,P276,{subject} can be found in,1,0.16666666666666666
+template_frequency,P276,{subject} is located in,1,0.16666666666666666
+template_frequency,P276,Where is {subject}? It is located in,1,0.16666666666666666
+template_frequency,P30,"{subject}, in",1,0.16666666666666666
+template_frequency,P30,{subject} is located in the continent,1,0.16666666666666666
+template_frequency,P30,{subject} is in,1,0.16666666666666666
+template_frequency,P30,{subject} belongs to the continent of,1,0.16666666666666666
+template_frequency,P30,{subject} is located in,1,0.16666666666666666
+template_frequency,P30,{subject} is a part of the continent of,1,0.16666666666666666
+template_frequency,P36,The capital city of {subject} is,1,0.16666666666666666
+template_frequency,P36,"{subject}, which has the capital city",1,0.16666666666666666
+template_frequency,P36,The capital of {subject} is,1,0.16666666666666666
+template_frequency,P36,"{subject}, which has the capital",1,0.16666666666666666
+template_frequency,P36,{subject}'s capital city is,1,0.16666666666666666
+template_frequency,P36,"{subject}'s capital city,",1,0.16666666666666666
+template_frequency,P364,The original language of {subject} was,2,0.3333333333333333
+template_frequency,P364,The language of {subject} was,2,0.3333333333333333
+template_frequency,P364,The original language of {subject} is,1,0.16666666666666666
+template_frequency,P364,The language of {subject} is,1,0.16666666666666666
+template_frequency,P37,"In {subject}, an official language is",2,0.3333333333333333
+template_frequency,P37,"In {subject}, the language spoken is",1,0.16666666666666666
+template_frequency,P37,"In {subject}, they understand",1,0.16666666666666666
+template_frequency,P37,The official language of {subject} is,1,0.16666666666666666
+template_frequency,P37,The law in {subject} declares the language,1,0.16666666666666666
+template_frequency,P39,"{subject}, who has the position of",1,0.16666666666666666
+template_frequency,P39,{subject} holds the title of,1,0.16666666666666666
+template_frequency,P39,{subject} holds the position of,1,0.16666666666666666
+template_frequency,P39,{subject} has the position of,1,0.16666666666666666
+template_frequency,P39,"{subject}, who holds the position of",1,0.16666666666666666
+template_frequency,P39,{subject}'s position is,1,0.16666666666666666
+template_frequency,P407,The language of {subject} was,2,0.3333333333333333
+template_frequency,P407,{subject} is written in,2,0.3333333333333333
+template_frequency,P407,{subject} was written in,1,0.16666666666666666
+template_frequency,P407,The language of {subject} is,1,0.16666666666666666
+template_frequency,P413,"{subject}, the",2,0.3333333333333333
+template_frequency,P413,{subject} plays as,1,0.16666666666666666
+template_frequency,P413,"{subject}, who plays the position",1,0.16666666666666666
+template_frequency,P413,Which position does {subject} play? They play as,1,0.16666666666666666
+template_frequency,P413,{subject} plays in the position of,1,0.16666666666666666
+template_frequency,P449,{subject} premiered on,1,0.16666666666666666
+template_frequency,P449,{subject} is to debut on,1,0.16666666666666666
+template_frequency,P449,{subject} was released on,1,0.16666666666666666
+template_frequency,P449,{subject} premieres on,1,0.16666666666666666
+template_frequency,P449,{subject} debuted on,1,0.16666666666666666
+template_frequency,P449,{subject} was originally aired on,1,0.16666666666666666
+template_frequency,P463,{subject} is a part of the,2,0.3333333333333333
+template_frequency,P463,{subject} is a member of,1,0.16666666666666666
+template_frequency,P463,{subject} belongs to the organization of,1,0.16666666666666666
+template_frequency,P463,{subject} is affiliated with the,1,0.16666666666666666
+template_frequency,P463,{subject} is affiliated with,1,0.16666666666666666
+template_frequency,P495,"{subject}, that was developed in",1,0.2
+template_frequency,P495,{subject} was created in,1,0.2
+template_frequency,P495,"{subject}, that was formulated in",1,0.2
+template_frequency,P495,{subject} was developed in,1,0.2
+template_frequency,P495,"{subject}, that was from",1,0.2
+template_frequency,P641,{subject} professionally plays the sport,1,0.2
+template_frequency,P641,{subject} is a professional,1,0.2
+template_frequency,P641,What sport does {subject} play? They play,1,0.2
+template_frequency,P641,{subject} plays,1,0.2
+template_frequency,P641,"{subject}, the",1,0.2
+template_frequency,P740,{subject} was founded in,1,0.2
+template_frequency,P740,"{subject}, that was formed in",1,0.2
+template_frequency,P740,{subject} originated in,1,0.2
+template_frequency,P740,"{subject}, that was started in",1,0.2
+template_frequency,P740,"{subject}, created in",1,0.2
+template_frequency,P937,{subject} found employment in,1,0.2
+template_frequency,P937,{subject} was employed in,1,0.2
+template_frequency,P937,{subject} worked in,1,0.2
+template_frequency,P937,{subject} took up work in,1,0.2
+template_frequency,P937,{subject} worked in the city of,1,0.2
+template_object_pair_frequency,{subject}'s domain of activity is,mathematics,1,0.005
+template_object_pair_frequency,{subject} spoke the language,French,1,0.005
+template_object_pair_frequency,{subject}'s profession is a,politician,1,0.005
+template_object_pair_frequency,{subject} is employed by,BBC,1,0.005
+template_object_pair_frequency,{subject} owner,Google,1,0.005
+template_object_pair_frequency,"{subject}, performing on the",piano,1,0.005
+template_object_pair_frequency,{subject} can be found in,Louisiana,1,0.005
+template_object_pair_frequency,The genre played by {subject} is,opera,1,0.005
+template_object_pair_frequency,{subject} was named after,Milan,1,0.005
+template_object_pair_frequency,{subject} is affiliated with the religion,Judaism,1,0.005
+template_object_pair_frequency,{subject} speaks,Hebrew,1,0.005
+template_object_pair_frequency,The headquarters of {subject} is in,Montreal,1,0.005
+template_object_pair_frequency,{subject} is located in,Japan,1,0.005
+template_object_pair_frequency,"{subject}, produced by",Chrysler,1,0.005
+template_object_pair_frequency,"{subject}, a product of",IBM,1,0.005
+template_object_pair_frequency,{subject} is native to,Salem,1,0.005
+template_object_pair_frequency,The twin city of {subject} is,Lisbon,1,0.005
+template_object_pair_frequency,{subject} died at,Mexico,1,0.005
+template_object_pair_frequency,"{subject}, which is represented by",Federal,1,0.005
+template_object_pair_frequency,"{subject}, who has a citizenship from",France,1,0.005
+template_object_pair_frequency,The location of {subject} is,Berlin,1,0.005
+template_object_pair_frequency,"{subject}, in",Africa,1,0.005
+template_object_pair_frequency,The capital city of {subject} is,Manila,1,0.005
+template_object_pair_frequency,The original language of {subject} was,Swedish,1,0.005
+template_object_pair_frequency,"In {subject}, an official language is",Finnish,1,0.005
+template_object_pair_frequency,"{subject}, who has the position of",mayor,1,0.005
+template_object_pair_frequency,The language of {subject} was,Chinese,1,0.005
+template_object_pair_frequency,"{subject}, the",linebacker,1,0.005
+template_object_pair_frequency,{subject} premiered on,MTV,1,0.005
+template_object_pair_frequency,{subject} is a part of the,FIFA,1,0.005
+template_object_pair_frequency,"{subject}, that was developed in",Malaysia,1,0.005
+template_object_pair_frequency,{subject} professionally plays the sport,basketball,1,0.005
+template_object_pair_frequency,{subject} was founded in,Mexico,1,0.005
+template_object_pair_frequency,{subject} found employment in,London,1,0.005
+template_object_pair_frequency,{subject} works in the area of,physics,1,0.005
+template_object_pair_frequency,"{subject}, speaker of",French,1,0.005
+template_object_pair_frequency,The profession of {subject} is,actor,1,0.005
+template_object_pair_frequency,"{subject}, who works for",BBC,1,0.005
+template_object_pair_frequency,{subject} is owned by,Berlin,1,0.005
+template_object_pair_frequency,{subject} plays the,violin,1,0.005
+template_object_pair_frequency,{subject} is in,Somerset,1,0.005
+template_object_pair_frequency,{subject} performs,opera,1,0.005
+template_object_pair_frequency,"{subject}, named after",Arctic,1,0.005
+template_object_pair_frequency,The official religion of {subject} is,Islam,1,0.005
+template_object_pair_frequency,The language used by {subject} is,Italian,1,0.005
+template_object_pair_frequency,The headquarter of {subject} is in,Chicago,1,0.005
+template_object_pair_frequency,"{subject}, located in",Netherlands,1,0.005
+template_object_pair_frequency,{subject} is developed by,BMW,1,0.005
+template_object_pair_frequency,{subject} is a product of,Boeing,1,0.005
+template_object_pair_frequency,{subject} was born in,Ottawa,1,0.005
+template_object_pair_frequency,What is the twin city of {subject}? It is,Warsaw,1,0.005
+template_object_pair_frequency,{subject} died in,Madrid,1,0.005
+template_object_pair_frequency,{subject} is represented by record label,Federal,1,0.005
+template_object_pair_frequency,"{subject}, who holds a citizenship from",Iran,1,0.005
+template_object_pair_frequency,{subject} can be found in,Rome,1,0.005
+template_object_pair_frequency,{subject} is located in the continent,Europe,1,0.005
+template_object_pair_frequency,"{subject}, which has the capital city",Madrid,1,0.005
+template_object_pair_frequency,The language of {subject} was,Tamil,1,0.005
+template_object_pair_frequency,"In {subject}, the language spoken is",English,1,0.005
+template_object_pair_frequency,{subject} holds the title of,bishop,1,0.005
+template_object_pair_frequency,{subject} was written in,French,1,0.005
+template_object_pair_frequency,{subject} plays as,midfielder,1,0.005
+template_object_pair_frequency,{subject} is to debut on,CBS,1,0.005
+template_object_pair_frequency,{subject} is a member of,NATO,1,0.005
+template_object_pair_frequency,{subject} was created in,Japan,1,0.005
+template_object_pair_frequency,{subject} is a professional,hockey,1,0.005
+template_object_pair_frequency,"{subject}, that was formed in",Manila,1,0.005
+template_object_pair_frequency,{subject} was employed in,Hamburg,1,0.005
+template_object_pair_frequency,{subject}'s area of work is,animation,1,0.005
+template_object_pair_frequency,The mother tongue of {subject} is,Serbian,1,0.005
+template_object_pair_frequency,The occupation of {subject} is,poet,1,0.005
+template_object_pair_frequency,{subject} works for,IBM,1,0.005
+template_object_pair_frequency,{subject}'s owner,Detroit,1,0.005
+template_object_pair_frequency,{subject} plays,piano,1,0.005
+template_object_pair_frequency,{subject} is located in,Arkansas,1,0.005
+template_object_pair_frequency,What does {subject} play? They play,jazz,1,0.005
+template_object_pair_frequency,"{subject}, which is named for",Richmond,1,0.005
+template_object_pair_frequency,{subject} follows the religion of,Buddhism,1,0.005
+template_object_pair_frequency,{subject} writes in,Spanish,1,0.005
+template_object_pair_frequency,{subject} is headquartered in,Wellington,1,0.005
+template_object_pair_frequency,"{subject}, which is located in",India,1,0.005
+template_object_pair_frequency,"{subject}, created by",Toyota,1,0.005
+template_object_pair_frequency,{subject} is developed by,IBM,1,0.005
+template_object_pair_frequency,{subject} originates from,Pennsylvania,1,0.005
+template_object_pair_frequency,{subject} is a twin city of,Budapest,1,0.005
+template_object_pair_frequency,{subject} died in the city of,Paris,1,0.005
+template_object_pair_frequency,{subject}'s label is,Brunswick,1,0.005
+template_object_pair_frequency,{subject} holds a citizenship from,Norway,1,0.005
+template_object_pair_frequency,{subject} is located in,Newport,1,0.005
+template_object_pair_frequency,{subject} is in,Africa,1,0.005
+template_object_pair_frequency,The capital of {subject} is,Salvador,1,0.005
+template_object_pair_frequency,The original language of {subject} is,English,1,0.005
+template_object_pair_frequency,"In {subject}, they understand",French,1,0.005
+template_object_pair_frequency,{subject} holds the position of,cardinal,1,0.005
+template_object_pair_frequency,The language of {subject} is,Russian,1,0.005
+template_object_pair_frequency,"{subject}, who plays the position",quarterback,1,0.005
+template_object_pair_frequency,{subject} was released on,NBC,1,0.005
+template_object_pair_frequency,{subject} belongs to the organization of,FIFA,1,0.005
+template_object_pair_frequency,"{subject}, that was formulated in",Italy,1,0.005
+template_object_pair_frequency,What sport does {subject} play? They play,basketball,1,0.005
+template_object_pair_frequency,{subject} originated in,Vancouver,1,0.005
+template_object_pair_frequency,{subject} worked in,Berlin,1,0.005
+template_object_pair_frequency,The expertise of {subject} is,opera,1,0.005
+template_object_pair_frequency,The native language of {subject} is,Russian,1,0.005
+template_object_pair_frequency,{subject}'s occupation is,poet,1,0.005
+template_object_pair_frequency,"{subject}, who is employed by",IBM,1,0.005
+template_object_pair_frequency,{subject} is from,Sony,1,0.005
+template_object_pair_frequency,"{subject}, the",guitar,1,0.005
+template_object_pair_frequency,"{subject}, in",Queensland,1,0.005
+template_object_pair_frequency,{subject} is known for performing,jazz,1,0.005
+template_object_pair_frequency,"{subject}, called after",Albany,1,0.005
+template_object_pair_frequency,{subject} is follower of,Islam,1,0.005
+template_object_pair_frequency,{subject} speaks the language,Swedish,1,0.005
+template_object_pair_frequency,{subject} is based in,Beijing,1,0.005
+template_object_pair_frequency,{subject} is located in the country of,Syria,1,0.005
+template_object_pair_frequency,{subject} is produced by,Honda,1,0.005
+template_object_pair_frequency,"{subject}, developed by",Google,1,0.005
+template_object_pair_frequency,{subject} was native to,Rome,1,0.005
+template_object_pair_frequency,The twin city of {subject} is,Moscow,1,0.005
+template_object_pair_frequency,{subject} succumbed at,Paris,1,0.005
+template_object_pair_frequency,{subject} is represented by music label,Festival,1,0.005
+template_object_pair_frequency,"{subject}, who is a citizen of",Bulgaria,1,0.005
+template_object_pair_frequency,{subject} is in,Hollywood,1,0.005
+template_object_pair_frequency,{subject} belongs to the continent of,Asia,1,0.005
+template_object_pair_frequency,"{subject}, which has the capital",Stockholm,1,0.005
+template_object_pair_frequency,The language of {subject} is,French,1,0.005
+template_object_pair_frequency,The official language of {subject} is,Finnish,1,0.005
+template_object_pair_frequency,{subject} has the position of,mayor,1,0.005
+template_object_pair_frequency,{subject} is written in,Italian,1,0.005
+template_object_pair_frequency,Which position does {subject} play? They play as,midfielder,1,0.005
+template_object_pair_frequency,{subject} premieres on,NBC,1,0.005
+template_object_pair_frequency,{subject} is affiliated with the,NATO,1,0.005
+template_object_pair_frequency,{subject} was developed in,India,1,0.005
+template_object_pair_frequency,{subject} plays,football,1,0.005
+template_object_pair_frequency,"{subject}, that was started in",Hamilton,1,0.005
+template_object_pair_frequency,{subject} took up work in,London,1,0.005
+template_object_pair_frequency,{subject}'s domain of work is,geometry,1,0.005
+template_object_pair_frequency,{subject} is a native speaker of,Dutch,1,0.005
+template_object_pair_frequency,"{subject}, who works as",composer,1,0.005
+template_object_pair_frequency,"{subject}, of",Microsoft,1,0.005
+template_object_pair_frequency,"{subject}, from",Richmond,1,0.005
+template_object_pair_frequency,{subject} plays the instrument,guitar,1,0.005
+template_object_pair_frequency,{subject} is within,Ontario,1,0.005
+template_object_pair_frequency,"{subject}, who plays",thriller,1,0.005
+template_object_pair_frequency,{subject} was named for,coffee,1,0.005
+template_object_pair_frequency,{subject} is follower of,Christianity,1,0.005
+template_object_pair_frequency,{subject} writes in,Italian,1,0.005
+template_object_pair_frequency,The headquarter of {subject} is located in,Toronto,1,0.005
+template_object_pair_frequency,"{subject}, in",Syria,1,0.005
+template_object_pair_frequency,{subject} is a product of,Microsoft,1,0.005
+template_object_pair_frequency,"{subject}, created by",Apple,1,0.005
+template_object_pair_frequency,{subject} is originally from,Miami,1,0.005
+template_object_pair_frequency,What is the twin city of {subject}? It is,Moscow,1,0.005
+template_object_pair_frequency,{subject} passed away at,Rome,1,0.005
+template_object_pair_frequency,{subject} label :,Brunswick,1,0.005
+template_object_pair_frequency,{subject} is a citizen of,Germany,1,0.005
+template_object_pair_frequency,Where is {subject}? It is located in,Nashville,1,0.005
+template_object_pair_frequency,{subject} is located in,Europe,1,0.005
+template_object_pair_frequency,{subject}'s capital city is,Brussels,1,0.005
+template_object_pair_frequency,The original language of {subject} was,Sanskrit,1,0.005
+template_object_pair_frequency,The law in {subject} declares the language,English,1,0.005
+template_object_pair_frequency,"{subject}, who holds the position of",bishop,1,0.005
+template_object_pair_frequency,{subject} is written in,Norwegian,1,0.005
+template_object_pair_frequency,{subject} plays in the position of,linebacker,1,0.005
+template_object_pair_frequency,{subject} debuted on,PBS,1,0.005
+template_object_pair_frequency,{subject} is affiliated with,Ministry,1,0.005
+template_object_pair_frequency,"{subject}, that was from",France,1,0.005
+template_object_pair_frequency,"{subject}, the",hockey,1,0.005
+template_object_pair_frequency,"{subject}, created in",Boston,1,0.005
+template_object_pair_frequency,{subject} worked in the city of,Toronto,1,0.005
+template_object_pair_frequency,The domain of activity of {subject} is,physician,1,0.005
+template_object_pair_frequency,"{subject}, a native",Dutch,1,0.005
+template_object_pair_frequency,{subject} works as,actor,1,0.005
+template_object_pair_frequency,"{subject}, who is employed by",ESPN,1,0.005
+template_object_pair_frequency,"{subject}, by",Detroit,1,0.005
+template_object_pair_frequency,"{subject}, playing the",violin,1,0.005
+template_object_pair_frequency,{subject} can be found in,Pennsylvania,1,0.005
+template_object_pair_frequency,{subject} plays,fantasy,1,0.005
+template_object_pair_frequency,"{subject}, which was named after",Beijing,1,0.005
+template_object_pair_frequency,{subject} is affiliated with the religion,Buddhism,1,0.005
+template_object_pair_frequency,The language used by {subject} is,Spanish,1,0.005
+template_object_pair_frequency,"{subject}, whose headquarters are in",London,1,0.005
+template_object_pair_frequency,{subject} is located in the country of,Australia,1,0.005
+template_object_pair_frequency,{subject} is created by,Apple,1,0.005
+template_object_pair_frequency,{subject} is created by,Amazon,1,0.005
+template_object_pair_frequency,{subject} was originally from,Sydney,1,0.005
+template_object_pair_frequency,{subject} is a twin city of,Dublin,1,0.005
+template_object_pair_frequency,{subject} passed away in,Wellington,1,0.005
+template_object_pair_frequency,{subject}'s record label is,Word,1,0.005
+template_object_pair_frequency,"{subject}, a citizen of",Australia,1,0.005
+template_object_pair_frequency,{subject} is in,Memphis,1,0.005
+template_object_pair_frequency,{subject} is a part of the continent of,Asia,1,0.005
+template_object_pair_frequency,"{subject}'s capital city,",Delhi,1,0.005
+template_object_pair_frequency,The language of {subject} was,French,1,0.005
+template_object_pair_frequency,"In {subject}, an official language is",Dutch,1,0.005
+template_object_pair_frequency,{subject}'s position is,pope,1,0.005
+template_object_pair_frequency,The language of {subject} was,Russian,1,0.005
+template_object_pair_frequency,"{subject}, the",defender,1,0.005
+template_object_pair_frequency,{subject} was originally aired on,CNN,1,0.005
+template_object_pair_frequency,{subject} is a part of the,WWE,1,0.005
+syllable_coverage,pool_fraction_used,,20,1.0
+syllable_coverage,max_single_syllable_rate,,919,0.06746463547334058
+syllable_coverage,uniform_rate,,20,0.05
