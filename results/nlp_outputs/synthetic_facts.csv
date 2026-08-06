@@ -1,0 +1,201 @@
+fact_id,relation,subject,prompt,paraphrases,answer
+syn_0,P101,Olmkellsarn Yelquinnex,Olmkellsarn Yelquinnex's domain of activity is,Olmkellsarn Yelquinnex works in the field of | Olmkellsarn Yelquinnex's area of work is | Olmkellsarn Yelquinnex specializes in,mathematics
+syn_1,P103,Vrantris Faldrosbath,Vrantris Faldrosbath spoke the language,Vrantris Faldrosbath spoke | Vrantris Faldrosbath used the language | Vrantris Faldrosbath communicated in,French
+syn_2,P106,Zorgor Gorbathhax,Zorgor Gorbathhax's profession is a,Zorgor Gorbathhax works as a | Zorgor Gorbathhax's occupation is | Zorgor Gorbathhax is employed as a,politician
+syn_3,P108,Yelkell Vekdros,Yelkell Vekdros is employed by,Yelkell Vekdros works for | Yelkell Vekdros is employed at | Yelkell Vekdros is affiliated with,BBC
+syn_4,P127,Zordask Nexhax,Zordask Nexhax owner,Zordask Nexhax is owned by | The owner of Zordask Nexhax is | Zordask Nexhax belongs to,Google
+syn_5,P1303,Miralith Batholmsarn,"Miralith Batholmsarn, performing on the","Miralith Batholmsarn, playing the | Miralith Batholmsarn, who performs on the | Miralith Batholmsarn plays the",piano
+syn_6,P131,Sarntris Batholm,Sarntris Batholm can be found in,Sarntris Batholm is located in | Sarntris Batholm is within | Sarntris Batholm is in,Louisiana
+syn_7,P136,Haxnexvran Vekyel,The genre played by Haxnexvran Vekyel is,Haxnexvran Vekyel performs | Haxnexvran Vekyel is known for performing | Haxnexvran Vekyel plays the genre,opera
+syn_8,P138,Lithdask Zorquin,Lithdask Zorquin was named after,Lithdask Zorquin was named for | Lithdask Zorquin is called after | Lithdask Zorquin takes its name from,Milan
+syn_9,P140,Vranzor Lithzorquin,Vranzor Lithzorquin is affiliated with the religion,Vranzor Lithzorquin follows the religion of | Vranzor Lithzorquin practices | Vranzor Lithzorquin adheres to,Judaism
+syn_10,P1412,Falmirazor Lithgor,Falmirazor Lithgor speaks,Falmirazor Lithgor speaks the language | Falmirazor Lithgor communicates in | Falmirazor Lithgor uses,Hebrew
+syn_11,P159,Thelsarnmira Quingor,The headquarters of Thelsarnmira Quingor is in,Thelsarnmira Quingor is headquartered in | Thelsarnmira Quingor is based in | The headquarter of Thelsarnmira Quingor is in,Montreal
+syn_12,P17,Triskellthel Falvran,Triskellthel Falvran is located in,Triskellthel Falvran is situated in | Triskellthel Falvran can be found in | Triskellthel Falvran is in the country of,Japan
+syn_13,P176,Drosnex Nexbrun,"Drosnex Nexbrun, produced by","Drosnex Nexbrun, developed by | Drosnex Nexbrun, created by | Drosnex Nexbrun, manufactured by",Chrysler
+syn_14,P178,Zorfal Haxyelsarn,"Zorfal Haxyelsarn, a product of","Zorfal Haxyelsarn, developed by | Zorfal Haxyelsarn, created by | Zorfal Haxyelsarn is a product developed by",IBM
+syn_15,P19,Kellfal Brungorvran,Kellfal Brungorvran is native to,Kellfal Brungorvran comes from | Kellfal Brungorvran originates from | Kellfal Brungorvran was born in,Salem
+syn_16,P190,Brunvran Brunsarnfal,The twin city of Brunvran Brunsarnfal is,Brunvran Brunsarnfal's twin city is | The sister city of Brunvran Brunsarnfal is | Brunvran Brunsarnfal is twinned with,Lisbon
+syn_17,P20,Trishaxgor Batholmnex,Trishaxgor Batholmnex died at,Trishaxgor Batholmnex died in | Trishaxgor Batholmnex passed away in | Trishaxgor Batholmnex lost their life in,Mexico
+syn_18,P264,Mirahaxgor Drosthel,"Mirahaxgor Drosthel, which is represented by","Mirahaxgor Drosthel, which is signed to | Mirahaxgor Drosthel, represented by the record label | Mirahaxgor Drosthel, whose label is",Federal
+syn_19,P27,Olmdros Sarnbath,"Olmdros Sarnbath, who has a citizenship from","Olmdros Sarnbath, who is a citizen of | Olmdros Sarnbath, holding citizenship in | Olmdros Sarnbath, with citizenship in",France
+syn_20,P276,Quinnex Haxnex,The location of Quinnex Haxnex is,Quinnex Haxnex is located in | Quinnex Haxnex can be found in | Quinnex Haxnex is situated in,Berlin
+syn_21,P30,Thellith Nexzor,"Thellith Nexzor, in","Thellith Nexzor, located in | Thellith Nexzor is in | Thellith Nexzor, situated in",Africa
+syn_22,P36,Nexbrun Zorolm,The capital city of Nexbrun Zorolm is,The capital of Nexbrun Zorolm is | Nexbrun Zorolm's capital city is | Nexbrun Zorolm has the capital,Manila
+syn_23,P364,Olmdaskvran Kellquin,The original language of Olmdaskvran Kellquin was,Olmdaskvran Kellquin was originally written in | The original language used in Olmdaskvran Kellquin was | Olmdaskvran Kellquin was first produced in,Swedish
+syn_24,P37,Brunsarnbath Quintris,"In Brunsarnbath Quintris, an official language is","The official language of Brunsarnbath Quintris is | One of the official languages of Brunsarnbath Quintris is | In Brunsarnbath Quintris, the official language is",Finnish
+syn_25,P39,Nexolm Brunfalyel,"Nexolm Brunfalyel, who has the position of","Nexolm Brunfalyel, serving as | Nexolm Brunfalyel, holding the position of | Nexolm Brunfalyel, whose position is",mayor
+syn_26,P407,Thelvek Drosnex,The language of Thelvek Drosnex was,Thelvek Drosnex was written in | Thelvek Drosnex was originally written in | The original language of Thelvek Drosnex was,Chinese
+syn_27,P413,Yellith Brunnex,"Yellith Brunnex, the","Yellith Brunnex, playing as | Yellith Brunnex, who plays as | Yellith Brunnex, in the position of",linebacker
+syn_28,P449,Brunhax Lithyelzor,Brunhax Lithyelzor premiered on,Brunhax Lithyelzor first aired on | Brunhax Lithyelzor debuted on | Brunhax Lithyelzor was originally broadcast on,MTV
+syn_29,P463,Drostris Quinmira,Drostris Quinmira is a part of the,Drostris Quinmira belongs to | Drostris Quinmira is a member of | Drostris Quinmira is affiliated with,FIFA
+syn_30,P495,Brunthel Trisbrungor,"Brunthel Trisbrungor, that was developed in","Brunthel Trisbrungor, developed in | Brunthel Trisbrungor, originating in | Brunthel Trisbrungor, from",Malaysia
+syn_31,P641,Nexsarnbath Bathgor,Nexsarnbath Bathgor professionally plays the sport,Nexsarnbath Bathgor plays the sport | Nexsarnbath Bathgor competes in | Nexsarnbath Bathgor is a professional,basketball
+syn_32,P740,Miralith Trisbath,Miralith Trisbath was founded in,Miralith Trisbath was established in | Miralith Trisbath originated in | Miralith Trisbath was formed in,Mexico
+syn_33,P937,Miralithnex Gorvek,Miralithnex Gorvek found employment in,Miralithnex Gorvek worked in | Miralithnex Gorvek was employed in | Miralithnex Gorvek took up work in,London
+syn_34,P101,Kellgor Thelquin,Kellgor Thelquin works in the area of,Kellgor Thelquin works in the field of | Kellgor Thelquin specializes in | Kellgor Thelquin's area of expertise is,physics
+syn_35,P103,Kellvek Daskolm,"Kellvek Daskolm, speaker of","Kellvek Daskolm, a speaker of | Kellvek Daskolm, who speaks | Kellvek Daskolm, a native speaker of",French
+syn_36,P106,Falgor Zorbathtris,The profession of Falgor Zorbathtris is,Falgor Zorbathtris's profession is | Falgor Zorbathtris works as | Falgor Zorbathtris is employed as,actor
+syn_37,P108,Sarnlith Bathzorfal,"Sarnlith Bathzorfal, who works for","Sarnlith Bathzorfal, employed by | Sarnlith Bathzorfal, working at | Sarnlith Bathzorfal, affiliated with",BBC
+syn_38,P127,Yelgor Yelbrun,Yelgor Yelbrun is owned by,Yelgor Yelbrun belongs to | The owner of Yelgor Yelbrun is | Yelgor Yelbrun is controlled by,Berlin
+syn_39,P1303,Miragor Yelbath,Miragor Yelbath plays the,Miragor Yelbath performs on the | Miragor Yelbath plays | Miragor Yelbath is a player of the,violin
+syn_40,P131,Zormira Olmmira,Zormira Olmmira is in,Zormira Olmmira is located in | Zormira Olmmira is within | Zormira Olmmira belongs to,Somerset
+syn_41,P136,Kellthel Haxbrun,Kellthel Haxbrun performs,Kellthel Haxbrun plays | Kellthel Haxbrun is known for performing | Kellthel Haxbrun performs the genre,opera
+syn_42,P138,Falnexyel Vekfal,"Falnexyel Vekfal, named after","Falnexyel Vekfal, called after | Falnexyel Vekfal, named for | Falnexyel Vekfal, which is named after",Arctic
+syn_43,P140,Yelsarn Olmbathbrun,The official religion of Yelsarn Olmbathbrun is,Yelsarn Olmbathbrun's official religion is | Yelsarn Olmbathbrun follows the official religion of | The state religion of Yelsarn Olmbathbrun is,Islam
+syn_44,P1412,Zorlith Droslith,The language used by Zorlith Droslith is,Zorlith Droslith speaks | Zorlith Droslith uses the language | Zorlith Droslith communicates in,Italian
+syn_45,P159,Yelquin Thelvekkell,The headquarter of Yelquin Thelvekkell is in,Yelquin Thelvekkell is headquartered in | Yelquin Thelvekkell is based in | The headquarters of Yelquin Thelvekkell are in,Chicago
+syn_46,P17,Olmhax Drosthel,"Olmhax Drosthel, located in","Olmhax Drosthel, situated in | Olmhax Drosthel is located in | Olmhax Drosthel, in",Netherlands
+syn_47,P176,Zorsarntris Bathkell,Zorsarntris Bathkell is developed by,Zorsarntris Bathkell was developed by | Zorsarntris Bathkell is produced by | Zorsarntris Bathkell is created by,BMW
+syn_48,P178,Miratris Haxbath,Miratris Haxbath is a product of,Miratris Haxbath was developed by | Miratris Haxbath was created by | Miratris Haxbath is produced by,Boeing
+syn_49,P19,Lithyel Kellbrun,Lithyel Kellbrun was born in,Lithyel Kellbrun was born at | Lithyel Kellbrun originates from | Lithyel Kellbrun is originally from,Ottawa
+syn_50,P190,Olmbrun Bathyel,What is the twin city of Olmbrun Bathyel? It is,Which city is twinned with Olmbrun Bathyel? It is | Olmbrun Bathyel's twin city is | The sister city of Olmbrun Bathyel is,Warsaw
+syn_51,P20,Gorkell Olmquin,Gorkell Olmquin died in,Gorkell Olmquin passed away in | Gorkell Olmquin lost their life in | Gorkell Olmquin died at,Madrid
+syn_52,P264,Gormira Brunbathdask,Gormira Brunbathdask is represented by record label,Gormira Brunbathdask is represented by the record label | Gormira Brunbathdask is signed to | Gormira Brunbathdask's record label is,Federal
+syn_53,P27,Thelmira Gordros,"Thelmira Gordros, who holds a citizenship from","Thelmira Gordros, who is a citizen of | Thelmira Gordros, holding citizenship in | Thelmira Gordros, with citizenship in",Iran
+syn_54,P276,Nexsarn Daskthel,Nexsarn Daskthel can be found in,Nexsarn Daskthel is located in | Nexsarn Daskthel is situated in | Nexsarn Daskthel is found in,Rome
+syn_55,P30,Falzorhax Kellgor,Falzorhax Kellgor is located in the continent,Falzorhax Kellgor is part of the continent of | Falzorhax Kellgor lies on the continent of | Falzorhax Kellgor belongs to the continent of,Europe
+syn_56,P36,Daskgor Trissarn,"Daskgor Trissarn, which has the capital city","Daskgor Trissarn, whose capital city is | Daskgor Trissarn has the capital | The capital city of Daskgor Trissarn is",Madrid
+syn_57,P364,Nexgor Quinlith,The language of Nexgor Quinlith was,Nexgor Quinlith was originally in | Nexgor Quinlith was first produced in | The original language of Nexgor Quinlith was,Tamil
+syn_58,P37,Sarnthel Zordask,"In Sarnthel Zordask, the language spoken is","The language spoken in Sarnthel Zordask is | People in Sarnthel Zordask speak | In Sarnthel Zordask, people use",English
+syn_59,P39,Bathdask Yelmira,Bathdask Yelmira holds the title of,Bathdask Yelmira holds the position of | Bathdask Yelmira serves as | Bathdask Yelmira is the,bishop
+syn_60,P407,Vekdask Quinmiralith,Vekdask Quinmiralith was written in,Vekdask Quinmiralith is written in | Vekdask Quinmiralith was originally written in | The language of Vekdask Quinmiralith was,French
+syn_61,P413,Trissarn Sarnquin,Trissarn Sarnquin plays as,Trissarn Sarnquin plays in the position of | Trissarn Sarnquin serves as | Trissarn Sarnquin's position is,midfielder
+syn_62,P449,Dasktris Falbath,Dasktris Falbath is to debut on,Dasktris Falbath will premiere on | Dasktris Falbath is set to air on | Dasktris Falbath will first appear on,CBS
+syn_63,P463,Gortris Thelyelnex,Gortris Thelyelnex is a member of,Gortris Thelyelnex belongs to | Gortris Thelyelnex is affiliated with | Gortris Thelyelnex is part of,NATO
+syn_64,P495,Lithdask Lithtris,Lithdask Lithtris was created in,Lithdask Lithtris was developed in | Lithdask Lithtris originated in | Lithdask Lithtris comes from,Japan
+syn_65,P641,Drosfal Yelgor,Drosfal Yelgor is a professional,Drosfal Yelgor professionally plays | Drosfal Yelgor is a professional player of | Drosfal Yelgor competes professionally in,hockey
+syn_66,P740,Nexbrun Bathvekfal,"Nexbrun Bathvekfal, that was formed in","Nexbrun Bathvekfal, founded in | Nexbrun Bathvekfal, established in | Nexbrun Bathvekfal, originating in",Manila
+syn_67,P937,Miradros Quinzor,Miradros Quinzor was employed in,Miradros Quinzor worked in | Miradros Quinzor found employment in | Miradros Quinzor was based in,Hamburg
+syn_68,P101,Lithnexgor Vekfal,Lithnexgor Vekfal's area of work is,Lithnexgor Vekfal works in the field of | Lithnexgor Vekfal's field of work is | Lithnexgor Vekfal specializes in,animation
+syn_69,P103,Zoryel Droshax,The mother tongue of Zoryel Droshax is,Zoryel Droshax's mother tongue is | Zoryel Droshax is a native speaker of | The native language of Zoryel Droshax is | Zoryel Droshax first learned to speak,Serbian
+syn_70,P106,Sarnkell Zorvran,The occupation of Sarnkell Zorvran is,Sarnkell Zorvran's occupation is | Sarnkell Zorvran works as | Sarnkell Zorvran's profession is,poet
+syn_71,P108,Haxthel Thelhax,Haxthel Thelhax works for,Haxthel Thelhax is employed by | Haxthel Thelhax works at | Haxthel Thelhax is affiliated with,IBM
+syn_72,P127,Olmsarn Zoryelmira,Olmsarn Zoryelmira's owner,Olmsarn Zoryelmira is owned by | The owner of Olmsarn Zoryelmira is | Olmsarn Zoryelmira belongs to,Detroit
+syn_73,P1303,Yelbathsarn Yelsarn,Yelbathsarn Yelsarn plays,Yelbathsarn Yelsarn plays the | Yelbathsarn Yelsarn performs on the | Yelbathsarn Yelsarn is known for playing,piano
+syn_74,P131,Trisfalthel Brunlith,Trisfalthel Brunlith is located in,Trisfalthel Brunlith is in | Trisfalthel Brunlith is situated in | Trisfalthel Brunlith is within,Arkansas
+syn_75,P136,Olmkell Trissarn,What does Olmkell Trissarn play? They play,Which genre does Olmkell Trissarn perform? They perform | Olmkell Trissarn performs | Olmkell Trissarn is known for performing,jazz
+syn_76,P138,Faltris Vrannex,"Faltris Vrannex, which is named for","Faltris Vrannex, which is named after | Faltris Vrannex, taking its name from | Faltris Vrannex, called after",Richmond
+syn_77,P140,Mirabath Yelbrun,Mirabath Yelbrun follows the religion of,Mirabath Yelbrun practices | Mirabath Yelbrun adheres to | Mirabath Yelbrun is a follower of,Buddhism
+syn_78,P1412,Gorvranzor Quintris,Gorvranzor Quintris writes in,Gorvranzor Quintris uses the language | Gorvranzor Quintris communicates in | Gorvranzor Quintris speaks,Spanish
+syn_79,P159,Zortris Haxgorkell,Zortris Haxgorkell is headquartered in,Zortris Haxgorkell is based in | Zortris Haxgorkell has its headquarters in | The headquarters of Zortris Haxgorkell are located in,Wellington
+syn_80,P17,Quinlithsarn Quinnex,"Quinlithsarn Quinnex, which is located in","Quinlithsarn Quinnex, located in | Quinlithsarn Quinnex, situated in | Quinlithsarn Quinnex is located in",India
+syn_81,P176,Vrantrisnex Olmmira,"Vrantrisnex Olmmira, created by","Vrantrisnex Olmmira, developed by | Vrantrisnex Olmmira, produced by | Vrantrisnex Olmmira, made by",Toyota
+syn_82,P178,Gortris Vransarn,Gortris Vransarn is developed by,Gortris Vransarn was created by | Gortris Vransarn is a product of | Gortris Vransarn was produced by,IBM
+syn_83,P19,Yelbath Kellfaldros,Yelbath Kellfaldros originates from,Yelbath Kellfaldros comes from | Yelbath Kellfaldros is native to | Yelbath Kellfaldros was born in,Pennsylvania
+syn_84,P190,Vranthel Zorquinbath,Vranthel Zorquinbath is a twin city of,Vranthel Zorquinbath is twinned with | Vranthel Zorquinbath is a sister city of | Vranthel Zorquinbath maintains a twin-city relationship with,Budapest
+syn_85,P20,Miravran Kellolm,Miravran Kellolm died in the city of,Miravran Kellolm died in | Miravran Kellolm passed away in | Miravran Kellolm lost their life in,Paris
+syn_86,P264,Kellbrunthel Quinvek,Kellbrunthel Quinvek's label is,Kellbrunthel Quinvek's record label is | Kellbrunthel Quinvek is represented by | Kellbrunthel Quinvek is signed to,Brunswick
+syn_87,P27,Vekdros Bathfalzor,Vekdros Bathfalzor holds a citizenship from,Vekdros Bathfalzor is a citizen of | Vekdros Bathfalzor has citizenship in | Vekdros Bathfalzor holds citizenship in,Norway
+syn_88,P276,Gorolmmira Falvran,Gorolmmira Falvran is located in,Gorolmmira Falvran is situated in | Gorolmmira Falvran can be found in | Gorolmmira Falvran is in,Newport
+syn_89,P30,Vekhax Brunvran,Vekhax Brunvran is in,Vekhax Brunvran is located in | Vekhax Brunvran lies in | Vekhax Brunvran is situated in,Africa
+syn_90,P36,Miravekfal Kellyelhax,The capital of Miravekfal Kellyelhax is,Miravekfal Kellyelhax's capital is | The capital city of Miravekfal Kellyelhax is | Miravekfal Kellyelhax has the capital,Salvador
+syn_91,P364,Olmquin Trisvekzor,The original language of Olmquin Trisvekzor is,Olmquin Trisvekzor was originally written in | Olmquin Trisvekzor was first produced in | The language originally used in Olmquin Trisvekzor is,English
+syn_92,P37,Olmquinvek Faltris,"In Olmquinvek Faltris, they understand","In Olmquinvek Faltris, people speak | The official language of Olmquinvek Faltris is | People in Olmquinvek Faltris use",French
+syn_93,P39,Olmnex Trismirahax,Olmnex Trismirahax holds the position of,Olmnex Trismirahax serves as | Olmnex Trismirahax is the | Olmnex Trismirahax has the title of,cardinal
+syn_94,P407,Nexhax Bathmira,The language of Nexhax Bathmira is,Nexhax Bathmira is written in | Nexhax Bathmira was written in | Nexhax Bathmira uses the language,Russian
+syn_95,P413,Thelsarn Gorhax,"Thelsarn Gorhax, who plays the position","Thelsarn Gorhax, playing as | Thelsarn Gorhax, who plays as | Thelsarn Gorhax, in the position of",quarterback
+syn_96,P449,Bathmira Olmquin,Bathmira Olmquin was released on,Bathmira Olmquin premiered on | Bathmira Olmquin originally aired on | Bathmira Olmquin debuted on,NBC
+syn_97,P463,Nexgortris Thellith,Nexgortris Thellith belongs to the organization of,Nexgortris Thellith is a member of | Nexgortris Thellith belongs to | Nexgortris Thellith is affiliated with,FIFA
+syn_98,P495,Mirasarn Brundroslith,"Mirasarn Brundroslith, that was formulated in","Mirasarn Brundroslith, developed in | Mirasarn Brundroslith, created in | Mirasarn Brundroslith, originating in",Italy
+syn_99,P641,Haxtris Sarnbrunyel,What sport does Haxtris Sarnbrunyel play? They play,Which sport does Haxtris Sarnbrunyel play? They play | Haxtris Sarnbrunyel plays the sport | Haxtris Sarnbrunyel competes in,basketball
+syn_100,P740,Yelolm Quinsarnyel,Yelolm Quinsarnyel originated in,Yelolm Quinsarnyel was founded in | Yelolm Quinsarnyel was established in | Yelolm Quinsarnyel was started in,Vancouver
+syn_101,P937,Yelfal Bathmira,Yelfal Bathmira worked in,Yelfal Bathmira was employed in | Yelfal Bathmira found employment in | Yelfal Bathmira used to work in,Berlin
+syn_102,P101,Vekmira Zorvran,The expertise of Vekmira Zorvran is,Vekmira Zorvran specializes in | Vekmira Zorvran's expertise is | Vekmira Zorvran works in the field of,opera
+syn_103,P103,Gorhax Theltris,The native language of Gorhax Theltris is,Gorhax Theltris's native language is | Gorhax Theltris is a native speaker of | The mother tongue of Gorhax Theltris is,Russian
+syn_104,P106,Yelmira Bathhaxquin,Yelmira Bathhaxquin's occupation is,Yelmira Bathhaxquin works as | Yelmira Bathhaxquin's profession is | Yelmira Bathhaxquin is employed as,poet
+syn_105,P108,Daskolm Thelfallith,"Daskolm Thelfallith, who is employed by","Daskolm Thelfallith, who works for | Daskolm Thelfallith, employed by | Daskolm Thelfallith, working for",IBM
+syn_106,P127,Olmgor Falbrun,Olmgor Falbrun is from,Olmgor Falbrun is owned by | Olmgor Falbrun belongs to | Olmgor Falbrun is controlled by,Sony
+syn_107,P1303,Gornex Bathkellzor,"Gornex Bathkellzor, the","Gornex Bathkellzor, playing the | Gornex Bathkellzor, who plays the | Gornex Bathkellzor, performing on the",guitar
+syn_108,P131,Faldros Olmkellvek,"Faldros Olmkellvek, in","Faldros Olmkellvek, located in | Faldros Olmkellvek, within | Faldros Olmkellvek is in",Queensland
+syn_109,P136,Nexbathzor Falkell,Nexbathzor Falkell is known for performing,Nexbathzor Falkell performs | Nexbathzor Falkell plays | Nexbathzor Falkell specializes in,jazz
+syn_110,P138,Gorbrunnex Quinhax,"Gorbrunnex Quinhax, called after","Gorbrunnex Quinhax, named after | Gorbrunnex Quinhax, named for | Gorbrunnex Quinhax, taking its name from",Albany
+syn_111,P140,Haxbath Trissarn,Haxbath Trissarn is follower of,Haxbath Trissarn follows the religion of | Haxbath Trissarn practices | Haxbath Trissarn adheres to,Islam
+syn_112,P1412,Nexvran Miraolm,Nexvran Miraolm speaks the language,Nexvran Miraolm speaks | Nexvran Miraolm uses the language | Nexvran Miraolm communicates in,Swedish
+syn_113,P159,Nexmira Brunfal,Nexmira Brunfal is based in,Nexmira Brunfal is headquartered in | Nexmira Brunfal has its headquarters in | The headquarters of Nexmira Brunfal are in,Beijing
+syn_114,P17,Quinvek Quinbrun,Quinvek Quinbrun is located in the country of,Quinvek Quinbrun is located in | Quinvek Quinbrun is situated in | Quinvek Quinbrun can be found in,Syria
+syn_115,P176,Haxnex Olmdros,Haxnex Olmdros is produced by,Haxnex Olmdros is manufactured by | Haxnex Olmdros is made by | Haxnex Olmdros is developed by,Honda
+syn_116,P178,Vranmirakell Kellzor,"Vranmirakell Kellzor, developed by","Vranmirakell Kellzor, created by | Vranmirakell Kellzor, produced by | Vranmirakell Kellzor, a product of",Google
+syn_117,P19,Falveklith Falkellthel,Falveklith Falkellthel was native to,Falveklith Falkellthel was from | Falveklith Falkellthel originated from | Falveklith Falkellthel was born in,Rome
+syn_118,P190,Bathhax Olmquin,The twin city of Bathhax Olmquin is,Bathhax Olmquin's twin city is | The sister city of Bathhax Olmquin is | Bathhax Olmquin is twinned with,Moscow
+syn_119,P20,Zormiralith Lithnexhax,Zormiralith Lithnexhax succumbed at,Zormiralith Lithnexhax died in | Zormiralith Lithnexhax passed away in | Zormiralith Lithnexhax lost their life in,Paris
+syn_120,P264,Zortris Dasksarn,Zortris Dasksarn is represented by music label,Zortris Dasksarn is signed to | Zortris Dasksarn's music label is | Zortris Dasksarn is represented by the record label,Festival
+syn_121,P27,Falolm Zordros,"Falolm Zordros, who is a citizen of","Falolm Zordros, holding citizenship in | Falolm Zordros, with citizenship in | Falolm Zordros, a citizen of",Bulgaria
+syn_122,P276,Zordrosthel Lithfal,Zordrosthel Lithfal is in,Zordrosthel Lithfal is located in | Zordrosthel Lithfal can be found in | Zordrosthel Lithfal is situated in,Hollywood
+syn_123,P30,Daskthel Quinsarntris,Daskthel Quinsarntris belongs to the continent of,Daskthel Quinsarntris is part of the continent of | Daskthel Quinsarntris lies in the continent of | Daskthel Quinsarntris is located on the continent of,Asia
+syn_124,P36,Yelvek Zorthel,"Yelvek Zorthel, which has the capital","Yelvek Zorthel, whose capital is | Yelvek Zorthel has the capital city | The capital of Yelvek Zorthel is",Stockholm
+syn_125,P364,Lithdrossarn Gorthel,The language of Lithdrossarn Gorthel is,Lithdrossarn Gorthel is in | Lithdrossarn Gorthel was originally produced in | Lithdrossarn Gorthel uses the language,French
+syn_126,P37,Daskyel Yelquinzor,The official language of Daskyel Yelquinzor is,"Daskyel Yelquinzor's official language is | The language officially spoken in Daskyel Yelquinzor is | In Daskyel Yelquinzor, the official language is",Finnish
+syn_127,P39,Mirahax Veknex,Mirahax Veknex has the position of,Mirahax Veknex holds the position of | Mirahax Veknex serves as | Mirahax Veknex's position is,mayor
+syn_128,P407,Bathgor Gorfal,Bathgor Gorfal is written in,Bathgor Gorfal was written in | The language of Bathgor Gorfal is | Bathgor Gorfal uses the written language,Italian
+syn_129,P413,Yelvran Trisnex,Which position does Yelvran Trisnex play? They play as,What position does Yelvran Trisnex play? They play as | Yelvran Trisnex plays the position of | Yelvran Trisnex's playing position is,midfielder
+syn_130,P449,Bathzor Vranvek,Bathzor Vranvek premieres on,Bathzor Vranvek debuts on | Bathzor Vranvek first airs on | Bathzor Vranvek is broadcast on,NBC
+syn_131,P463,Dasksarn Brunnex,Dasksarn Brunnex is affiliated with the,Dasksarn Brunnex belongs to | Dasksarn Brunnex is a member of | Dasksarn Brunnex is associated with,NATO
+syn_132,P495,Olmbrun Brunmira,Olmbrun Brunmira was developed in,Olmbrun Brunmira originated in | Olmbrun Brunmira was created in | Olmbrun Brunmira comes from,India
+syn_133,P641,Kellyel Nexfalyel,Kellyel Nexfalyel plays,Kellyel Nexfalyel professionally plays | Kellyel Nexfalyel competes in | Kellyel Nexfalyel participates in,football
+syn_134,P740,Bathhax Zornex,"Bathhax Zornex, that was started in","Bathhax Zornex, founded in | Bathhax Zornex, established in | Bathhax Zornex, originated in",Hamilton
+syn_135,P937,Vrangor Gormira,Vrangor Gormira took up work in,Vrangor Gormira worked in | Vrangor Gormira found employment in | Vrangor Gormira was employed in,London
+syn_136,P101,Kelllith Falolm,Kelllith Falolm's domain of work is,Kelllith Falolm works in the field of | Kelllith Falolm's area of work is | Kelllith Falolm specializes in,geometry
+syn_137,P103,Brunvekhax Quinmira,Brunvekhax Quinmira is a native speaker of,Brunvekhax Quinmira speaks | Brunvekhax Quinmira's native language is | Brunvekhax Quinmira's mother tongue is,Dutch
+syn_138,P106,Mirakelldask Bathsarn,"Mirakelldask Bathsarn, who works as","Mirakelldask Bathsarn, whose profession is | Mirakelldask Bathsarn, employed as | Mirakelldask Bathsarn, working as",composer
+syn_139,P108,Haxfal Lithtrissarn,"Haxfal Lithtrissarn, of","Haxfal Lithtrissarn, employed by | Haxfal Lithtrissarn, who works for | Haxfal Lithtrissarn is affiliated with",Microsoft
+syn_140,P127,Haxzorquin Trisvran,"Haxzorquin Trisvran, from","Haxzorquin Trisvran, owned by | Haxzorquin Trisvran, belonging to | Haxzorquin Trisvran is owned by",Richmond
+syn_141,P1303,Bathyel Bathliththel,Bathyel Bathliththel plays the instrument,"Bathyel Bathliththel plays the | Bathyel Bathliththel performs on the | Bathyel Bathliththel, playing the",guitar
+syn_142,P131,Bathtris Sarnnex,Bathtris Sarnnex is within,Bathtris Sarnnex is located in | Bathtris Sarnnex belongs to | Bathtris Sarnnex is part of,Ontario
+syn_143,P136,Quindrosfal Brunyel,"Quindrosfal Brunyel, who plays","Quindrosfal Brunyel, performing | Quindrosfal Brunyel, known for performing | Quindrosfal Brunyel, who performs",thriller
+syn_144,P138,Quingormira Quinmirafal,Quingormira Quinmirafal was named for,Quingormira Quinmirafal was named after | Quingormira Quinmirafal took its name from | Quingormira Quinmirafal was called after,coffee
+syn_145,P140,Thellith Kellbrun,Thellith Kellbrun is follower of,Thellith Kellbrun follows the religion of | Thellith Kellbrun practices | Thellith Kellbrun adheres to,Christianity
+syn_146,P1412,Daskthel Kellfalhax,Daskthel Kellfalhax writes in,Daskthel Kellfalhax uses the language | Daskthel Kellfalhax communicates in | Daskthel Kellfalhax speaks,Italian
+syn_147,P159,Gorsarnbath Bathgor,The headquarter of Gorsarnbath Bathgor is located in,Gorsarnbath Bathgor is headquartered in | The headquarters of Gorsarnbath Bathgor are in | Gorsarnbath Bathgor is based in,Toronto
+syn_148,P17,Kellhax Yelhax,"Kellhax Yelhax, in","Kellhax Yelhax, located in | Kellhax Yelhax is in | Kellhax Yelhax, situated in",Syria
+syn_149,P176,Zorbath Nexkell,Zorbath Nexkell is a product of,Zorbath Nexkell was developed by | Zorbath Nexkell was created by | Zorbath Nexkell is produced by,Microsoft
+syn_150,P178,Mirayelhax Falnex,"Mirayelhax Falnex, created by","Mirayelhax Falnex, developed by | Mirayelhax Falnex, produced by | Mirayelhax Falnex, made by",Apple
+syn_151,P19,Miradask Faltris,Miradask Faltris is originally from,Miradask Faltris comes from | Miradask Faltris was born in | Miradask Faltris originates from,Miami
+syn_152,P190,Daskfal Kellmira,What is the twin city of Daskfal Kellmira? It is,Which city is twinned with Daskfal Kellmira? It is | Daskfal Kellmira's twin city is | The sister city of Daskfal Kellmira is,Moscow
+syn_153,P20,Lithbrun Mirafalkell,Lithbrun Mirafalkell passed away at,Lithbrun Mirafalkell died in | Lithbrun Mirafalkell passed away in | Lithbrun Mirafalkell lost their life in,Rome
+syn_154,P264,Zormira Yelzor,Zormira Yelzor label :,Zormira Yelzor's record label is | Zormira Yelzor is signed to | The music label of Zormira Yelzor is,Brunswick
+syn_155,P27,Trisbrun Haxgor,Trisbrun Haxgor is a citizen of,Trisbrun Haxgor holds citizenship in | Trisbrun Haxgor has citizenship in | Trisbrun Haxgor belongs to,Germany
+syn_156,P276,Olmgor Quinfaldros,Where is Olmgor Quinfaldros? It is located in,What is the location of Olmgor Quinfaldros? It is | Olmgor Quinfaldros is located in | Where can Olmgor Quinfaldros be found? In,Nashville
+syn_157,P30,Olmmira Falbrundros,Olmmira Falbrundros is located in,Olmmira Falbrundros is found in | Olmmira Falbrundros lies in | Olmmira Falbrundros is situated in,Europe
+syn_158,P36,Olmgorsarn Lithsarn,Olmgorsarn Lithsarn's capital city is,The capital city of Olmgorsarn Lithsarn is | Olmgorsarn Lithsarn's capital is | The capital of Olmgorsarn Lithsarn is,Brussels
+syn_159,P364,Bathnex Haxyelvek,The original language of Bathnex Haxyelvek was,Bathnex Haxyelvek was originally written in | The original language used in Bathnex Haxyelvek was | Bathnex Haxyelvek was first produced in,Sanskrit
+syn_160,P37,Sarnkell Brunsarn,The law in Sarnkell Brunsarn declares the language,"The official language of Sarnkell Brunsarn is | According to the law in Sarnkell Brunsarn, the language is | The language recognized by law in Sarnkell Brunsarn is",English
+syn_161,P39,Thelbathdros Quinvran,"Thelbathdros Quinvran, who holds the position of","Thelbathdros Quinvran, serving as | Thelbathdros Quinvran, whose position is | Thelbathdros Quinvran, holding the title of",bishop
+syn_162,P407,Drostris Drosvran,Drostris Drosvran is written in,Drostris Drosvran was written in | The language of Drostris Drosvran is | Drostris Drosvran uses the written language,Norwegian
+syn_163,P413,Brunyel Dasksarnfal,Brunyel Dasksarnfal plays in the position of,Brunyel Dasksarnfal plays as | Brunyel Dasksarnfal plays the position of | Brunyel Dasksarnfal serves as,linebacker
+syn_164,P449,Lithdask Bathdros,Lithdask Bathdros debuted on,Lithdask Bathdros premiered on | Lithdask Bathdros first aired on | Lithdask Bathdros was originally broadcast on,PBS
+syn_165,P463,Sarngornex Daskvran,Sarngornex Daskvran is affiliated with,Sarngornex Daskvran is a member of | Sarngornex Daskvran belongs to | Sarngornex Daskvran is associated with,Ministry
+syn_166,P495,Quinmira Quinzortris,"Quinmira Quinzortris, that was from","Quinmira Quinzortris, originating in | Quinmira Quinzortris, from | Quinmira Quinzortris, developed in",France
+syn_167,P641,Olmkell Mirahaxdros,"Olmkell Mirahaxdros, the","Olmkell Mirahaxdros, a professional | Olmkell Mirahaxdros, who plays | Olmkell Mirahaxdros, competing in",hockey
+syn_168,P740,Miraolm Thelbathnex,"Miraolm Thelbathnex, created in","Miraolm Thelbathnex, founded in | Miraolm Thelbathnex, formed in | Miraolm Thelbathnex, established in",Boston
+syn_169,P937,Lithvran Trisquin,Lithvran Trisquin worked in the city of,Lithvran Trisquin worked in | Lithvran Trisquin was employed in | Lithvran Trisquin found employment in,Toronto
+syn_170,P101,Yelkell Falyeldask,The domain of activity of Yelkell Falyeldask is,Yelkell Falyeldask's field of work is | Yelkell Falyeldask works in the field of | Yelkell Falyeldask specializes in,physician
+syn_171,P103,Thelquinvran Trisquin,"Thelquinvran Trisquin, a native","Thelquinvran Trisquin, a native speaker of | Thelquinvran Trisquin, speaking | Thelquinvran Trisquin, whose native language is",Dutch
+syn_172,P106,Daskmira Yelthel,Daskmira Yelthel works as,Daskmira Yelthel is employed as | Daskmira Yelthel has the profession of | Daskmira Yelthel serves as,actor
+syn_173,P108,Yelvekbath Miraolm,"Yelvekbath Miraolm, who is employed by","Yelvekbath Miraolm, who works for | Yelvekbath Miraolm, employed by | Yelvekbath Miraolm, working for",ESPN
+syn_174,P127,Falveksarn Nexquin,"Falveksarn Nexquin, by","Falveksarn Nexquin, owned by | Falveksarn Nexquin, operated by | Falveksarn Nexquin is owned by",Detroit
+syn_175,P1303,Haxdros Gorzorfal,"Haxdros Gorzorfal, playing the","Haxdros Gorzorfal, who plays the | Haxdros Gorzorfal, performing on the | Haxdros Gorzorfal, plays the",violin
+syn_176,P131,Nexvran Falquindask,Nexvran Falquindask can be found in,Nexvran Falquindask is located in | Nexvran Falquindask is within | Nexvran Falquindask is in,Pennsylvania
+syn_177,P136,Vekmiravran Lithtris,Vekmiravran Lithtris plays,Vekmiravran Lithtris performs | Vekmiravran Lithtris is known for | Vekmiravran Lithtris specializes in,fantasy
+syn_178,P138,Vekbath Daskthelnex,"Vekbath Daskthelnex, which was named after","Vekbath Daskthelnex, which was named for | Vekbath Daskthelnex, named after | Vekbath Daskthelnex, taking its name from",Beijing
+syn_179,P140,Zormiradask Gordask,Zormiradask Gordask is affiliated with the religion,Zormiradask Gordask follows the religion of | Zormiradask Gordask practices | Zormiradask Gordask adheres to,Buddhism
+syn_180,P1412,Lithyel Falbrunthel,The language used by Lithyel Falbrunthel is,Lithyel Falbrunthel speaks | Lithyel Falbrunthel uses the language | Lithyel Falbrunthel communicates in,Spanish
+syn_181,P159,Vranzor Gordros,"Vranzor Gordros, whose headquarters are in","Vranzor Gordros, headquartered in | Vranzor Gordros, based in | Vranzor Gordros, with headquarters in",London
+syn_182,P17,Bathquinvran Olmthel,Bathquinvran Olmthel is located in the country of,Bathquinvran Olmthel is located in | Bathquinvran Olmthel is situated in | Bathquinvran Olmthel can be found in,Australia
+syn_183,P176,Thelquin Gorzorlith,Thelquin Gorzorlith is created by,Thelquin Gorzorlith is developed by | Thelquin Gorzorlith is produced by | Thelquin Gorzorlith is made by,Apple
+syn_184,P178,Daskgorbrun Bathtris,Daskgorbrun Bathtris is created by,Daskgorbrun Bathtris is developed by | Daskgorbrun Bathtris is produced by | Daskgorbrun Bathtris is made by,Amazon
+syn_185,P19,Lithzordros Kelltris,Lithzordros Kelltris was originally from,Lithzordros Kelltris was born in | Lithzordros Kelltris originated from | Lithzordros Kelltris is native to,Sydney
+syn_186,P190,Vekzor Gorzordros,Vekzor Gorzordros is a twin city of,Vekzor Gorzordros is twinned with | Vekzor Gorzordros is a sister city of | Vekzor Gorzordros maintains a twin-city relationship with,Dublin
+syn_187,P20,Olmhaxnex Bathkell,Olmhaxnex Bathkell passed away in,Olmhaxnex Bathkell died in | Olmhaxnex Bathkell lost their life in | Olmhaxnex Bathkell died at,Wellington
+syn_188,P264,Nextrismira Veksarnnex,Nextrismira Veksarnnex's record label is,Nextrismira Veksarnnex's music label is | Nextrismira Veksarnnex is signed to | Nextrismira Veksarnnex is represented by,Word
+syn_189,P27,Miratheltris Vranthel,"Miratheltris Vranthel, a citizen of","Miratheltris Vranthel, holding citizenship in | Miratheltris Vranthel, who is a citizen of | Miratheltris Vranthel has citizenship in",Australia
+syn_190,P276,Theltris Vrandask,Theltris Vrandask is in,Theltris Vrandask is located in | Theltris Vrandask can be found in | Theltris Vrandask is situated in,Memphis
+syn_191,P30,Nexquin Nexbrundros,Nexquin Nexbrundros is a part of the continent of,Nexquin Nexbrundros belongs to the continent of | Nexquin Nexbrundros lies on the continent of | Nexquin Nexbrundros is located on the continent of,Asia
+syn_192,P36,Zorbath Mirathel,"Zorbath Mirathel's capital city,",Zorbath Mirathel's capital city is | The capital city of Zorbath Mirathel is | Zorbath Mirathel has the capital,Delhi
+syn_193,P364,Yelmira Brunmira,The language of Yelmira Brunmira was,Yelmira Brunmira was originally in | Yelmira Brunmira was first produced in | The original language of Yelmira Brunmira was,French
+syn_194,P37,Olmhaxthel Miralith,"In Olmhaxthel Miralith, an official language is","The official language of Olmhaxthel Miralith is | One of the official languages of Olmhaxthel Miralith is | In Olmhaxthel Miralith, the official language is",Dutch
+syn_195,P39,Dasksarn Nexlithhax,Dasksarn Nexlithhax's position is,Dasksarn Nexlithhax holds the position of | Dasksarn Nexlithhax serves as | Dasksarn Nexlithhax has the title of,pope
+syn_196,P407,Zormira Drosmirathel,The language of Zormira Drosmirathel was,Zormira Drosmirathel was written in | Zormira Drosmirathel was originally written in | The original language of Zormira Drosmirathel was,Russian
+syn_197,P413,Falmirabath Lithgor,"Falmirabath Lithgor, the","Falmirabath Lithgor, playing as | Falmirabath Lithgor, who plays as | Falmirabath Lithgor, in the position of",defender
+syn_198,P449,Haxtris Falgor,Haxtris Falgor was originally aired on,Haxtris Falgor first aired on | Haxtris Falgor premiered on | Haxtris Falgor debuted on,CNN
+syn_199,P463,Sarnbrunlith Gorquin,Sarnbrunlith Gorquin is a part of the,Sarnbrunlith Gorquin belongs to | Sarnbrunlith Gorquin is a member of | Sarnbrunlith Gorquin is affiliated with,WWE

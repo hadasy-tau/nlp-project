@@ -18,18 +18,34 @@ TAU NLP course project.
 ## Pipeline
 
 ```
-prepare_data      load facts (CounterFact by default), keep single-token answers,
-                  build synthetic pseudo-entity facts from the same templates
+prepare_data      load facts (CounterFact by default), keep single-token answers
+make_synthetic    build synthetic pseudo-entity facts from the same relation
+                  templates as the real data (own stage so the diversity report /
+                  synthetic_facts.csv can be inspected and data.synthetic.* tuned
+                  by re-running just this stage, without touching the real data)
 score_base        score the base model; split known/unknown; DECISION-RULE gate
                   (needs >= data.min_known_facts known facts or it aborts and
                   tells you to move one model size up)
-build_conditions  relation-stratified sampling of known / unknown / synthetic
+build_conditions  relation-stratified sampling of known / latent / unknown / synthetic
 train_lora        LoRA fine-tune; adapter checkpoint every N steps
 analyze           layer-wise lens metrics for base + every checkpoint
                   (train prompts + held-out paraphrases)
 patch             activation patching: earliest layer whose patched stream flips
                   the base model to the learned answer
+trajectory        per-fact settle layer + trajectory class (never/transient/
+                  late_only/persistent), base->final transitions, and settle
+                  depth regressed on continuous baseline log-prob
+stats             bootstrap CIs, Mann-Whitney/Fisher/Wilcoxon significance tests
+                  on the patching + layer-wise outputs (no new experiments)
+score_locality    KL divergence + ground-truth correctness on neighborhood
+                  prompts, at every checkpoint (collateral-damage check)
+rank_ablation     re-train at each lora.rank_ablation.ranks value, same analysis
+visualize         PDF figures + LaTeX table snippets from the CSV/parquet outputs
 ```
+
+Run `scripts/run_multi_seed.py` (and aggregate with `scripts/aggregate_seeds.py`)
+to repeat the full pipeline above across several seeds for cross-seed robustness
+instead of a single seed.
 
 Every stage reads/writes artifacts under `output_dir`, so stages can run in
 separate (Kaggle) sessions.
@@ -68,55 +84,54 @@ Everything lives in the YAML configs ([configs/default.yaml](configs/default.yam
   into nested schemas (`requested_rewrite.target_true.str`), and a `{}` or
   `{subject}` placeholder in the prompt is filled with the subject.
 
-  The default is `azhx/counterfact` (the full original) rather than the flattened
-  `NeelNanda/counterfact-tracing`, because **only the full version ships
-  `paraphrase_prompts`** — without them the held-out generalization probe
-  (pitfall 3) cannot run. The flattened version still works if you want it:
+  The default is `azhx/counterfact` (the full original), which carries the nested
+  `requested_rewrite.*` schema the default field mapping targets. The flattened
+  `NeelNanda/counterfact-tracing` still works if you want it:
 
   ```yaml
   data:
     dataset: NeelNanda/counterfact-tracing
     fields: {prompt: prompt, subject: subject, target_true: target_true,
-             target_false: target_false, relation: relation_id, paraphrases: null}
+             target_false: target_false, relation: relation_id}
   ```
+
+  Held-out paraphrases for the generalization probe (pitfall 3) no longer come
+  from the source dataset at all — they're looked up from a curated local CSV,
+  `data.paraphrase_templates_csv` (default: `additional_data/paraphreases_per_prompt.csv`),
+  keyed on the exact `(relation, prompt template)` pair. This applies uniformly to
+  real facts (`prepare_facts()`) and synthetic facts (`make_synthetic()`), and gives
+  clean, hand-verified rewordings instead of CounterFact's own `paraphrase_prompts`
+  field, whose entries are GPT-generated continuations ("<topically-primed lead-in
+  sentence>. <actual paraphrase>") rather than clean rewordings of the prompt.
 - **Lenses**: `lens.use_logit` / `lens.use_tuned`; `lens.tuned_lens_id` defaults
   to the model name. If no pretrained tuned lens exists for the model, the
   pipeline warns and continues with the logit lens only.
 
-## Running on Kaggle
+## Running on Colab (primary)
 
-Use [kaggle/kaggle_pipeline.ipynb](kaggle/kaggle_pipeline.ipynb). Enable a GPU
-(T4/P100), set the repo URL in the first cell, and run. Key points:
-
-- Output goes to `/kaggle/working/outputs` (persisted; download `results/`).
-- fp16 everywhere — Kaggle's T4 (compute 7.5) and P100 (6.0) **do not support
-  bf16**. Log-softmax is computed in fp32 regardless. This is already the
-  config default; don't change it to bf16 on Kaggle.
-- The whole 410m run fits comfortably in a single session (LoRA on ~1.5k short
-  prompts is minutes on a T4; analysis is the longer part). Use *Save & Run All*
-  for free background execution.
-- Stages are resumable: if a session dies, re-run with `--stages` starting from
-  the last completed stage (artifacts are on disk).
-- **`pip uninstall -y torchao` is required** (the launcher does it). Kaggle images
-  ship torchao 0.10, and peft's LoRA dispatcher raises `ImportError` on anything
-  below 0.16 as it wraps each layer. We don't use torchao quantization, so removing
-  it is the clean fix. A preflight check fails fast with this message if it's still
-  installed, rather than dying after data prep.
+Use [colab/colab_pipeline.ipynb](colab/colab_pipeline.ipynb) with an **A100**
+runtime. It clones the repo, installs requirements, and runs the pipeline with
+`output_dir` on Google Drive, so a disconnected session resumes by re-running
+with `--stages` from the last completed stage.
 
 ## Outputs
 
 ```
 outputs/
-  config_resolved.yaml       exact config used
-  facts.parquet              filtered single-token facts
-  synthetic.parquet          pseudo-entity facts
-  facts_scored.parquet       base-model scores incl. rank, logprob, top-1 pred
-  conditions.parquet         sampled known/unknown/synthetic sets
-  lora/step_*/, final/       adapter checkpoints + training_log.csv
+  config_resolved.yaml           exact config used
+  facts.parquet                  filtered single-token facts
+  synthetic.parquet              pseudo-entity facts
+  synthetic_diversity_report.csv token-length/object/template/syllable diversity audit
+  synthetic_facts.csv            human-readable export of the synthetic facts/prompts
+  facts_scored.parquet           base-model scores incl. rank, logprob, top-1 pred
+  conditions.parquet             sampled known/latent/unknown/synthetic sets
+  lora/step_*/, final/           adapter checkpoints + training_log.csv
   results/
-    layerwise.parquet        long format: variant x fact x lens x layer metrics
-    summary.csv              accuracy, mean logprob, mean first-layer-of-appearance
-    patching.csv             per-layer flip results + first_flip_layer
+    layerwise.parquet            long format: variant x fact x lens x layer metrics
+    summary.csv                  accuracy, mean logprob, mean first-layer-of-appearance
+    patching.csv                 per-layer flip results + first_flip_layer
+    rank_ablation_summary.csv    accuracy/depth per rank
+  figures/                       PDF figures generated by the `visualize` stage
 ```
 
 Headline metrics: **first layer of appearance** (earliest layer where the answer
@@ -133,7 +148,10 @@ first-flip layer — all as a function of training step and per condition.
 4. **Metrics vs. training step** — adapters checkpointed every
    `lora.checkpoint_every` steps; don't compare conditions at one fixed step.
 5. **Right padding + explicit last-real-token gather** — never left padding.
-6. **fp16 weights, fp32 log-softmax** — Kaggle GPUs have no bf16.
+6. **Measurement precision** — fp32 weights, fp32 log-softmax, TF32 disabled;
+   fp16 rank ties flip between passes and corrupt the condition split and every
+   first-layer-of-appearance. `analyze` asserts its base re-scoring matches
+   `score_base` on those thresholds. Never bf16 on Kaggle GPUs.
 7. **Relation stratification** — per-relation cap in condition sampling
    (`data.max_relation_fraction`).
 8. **Wrong-answer audit** — `score_base` reports what wrong predictions look

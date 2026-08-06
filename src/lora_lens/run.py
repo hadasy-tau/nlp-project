@@ -15,10 +15,11 @@ from pathlib import Path
 import pandas as pd
 
 from .config import load_config, save_config
-from .utils import load_model, load_tokenizer, resolve_device, set_seed, free_model
+from .utils import (configure_stdout, disable_tf32, free_model, load_model, load_tokenizer,
+                    resolve_device, set_seed)
 
-STAGES = ["prepare_data", "score_base", "build_conditions", "train_lora", "analyze",
-          "patch", "score_locality", "rank_ablation", "visualize"]
+STAGES = ["prepare_data", "make_synthetic", "score_base", "build_conditions", "train_lora",
+          "analyze", "patch", "trajectory", "rank_ablation", "visualize"]
 
 
 def _out(cfg) -> Path:
@@ -51,10 +52,16 @@ def _preflight(stages: list[str]) -> None:
 
 
 def stage_prepare_data(cfg, tokenizer, device):
-    from .data import make_synthetic, prepare_facts
+    from .data import prepare_facts
 
     facts = prepare_facts(cfg, tokenizer)
     facts.to_parquet(_out(cfg) / "facts.parquet", index=False)
+
+
+def stage_make_synthetic(cfg, tokenizer, device):
+    from .data import make_synthetic
+
+    facts = pd.read_parquet(_out(cfg) / "facts.parquet")
     synthetic = make_synthetic(facts, tokenizer, cfg)
     synthetic.to_parquet(_out(cfg) / "synthetic.parquet", index=False)
 
@@ -63,6 +70,7 @@ def stage_score_base(cfg, tokenizer, device):
     from .scoring import score_base_model
 
     facts = pd.read_parquet(_out(cfg) / "facts.parquet")
+    # Defines known/latent/unknown; analyze asserts against it.
     model = load_model(cfg, device=device)
     scored = score_base_model(cfg, model, tokenizer, facts, device)
     free_model(model)
@@ -102,11 +110,10 @@ def stage_patch(cfg, tokenizer, device):
     run_patching(cfg, tokenizer, conditions, device)
 
 
-def stage_score_locality(cfg, tokenizer, device):
-    from .locality import run_locality_scoring
+def stage_trajectory(cfg, tokenizer, device):
+    from .trajectory import run_trajectory
 
-    conditions = pd.read_parquet(_out(cfg) / "conditions.parquet")
-    run_locality_scoring(cfg, tokenizer, conditions, device)
+    run_trajectory(cfg)
 
 
 def stage_rank_ablation(cfg, tokenizer, device):
@@ -131,10 +138,13 @@ def main(argv=None):
                     metavar="KEY=VALUE", help="Dotted config override, repeatable")
     args = ap.parse_args(argv)
 
+    configure_stdout()
     cfg = load_config(args.config, tuple(args.overrides))
     set_seed(cfg.seed)
+    disable_tf32()
     device = resolve_device(cfg)
-    print(f"[run] model={cfg.model.name} device={device} output_dir={cfg.output_dir}")
+    print(f"[run] model={cfg.model.name} device={device} output_dir={cfg.output_dir} "
+          f"dtype={cfg.model.inference_dtype}")
     save_config(cfg, _out(cfg) / "config_resolved.yaml")
 
     stages = STAGES if args.stages == "all" else [s.strip() for s in args.stages.split(",")]

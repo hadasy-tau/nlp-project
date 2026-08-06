@@ -12,6 +12,24 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 DTYPES = {"float16": torch.float16, "float32": torch.float32, "bfloat16": torch.bfloat16}
 
 
+def configure_stdout() -> None:
+    """UTF-8 stdout/stderr so a cp1252 console cannot kill a stage on a print."""
+    import sys
+
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
+def disable_tf32() -> None:
+    """Stop Ampere+ routing fp32 matmuls through TF32's ~10 mantissa bits."""
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+
+
 def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -40,9 +58,8 @@ def load_model(cfg, device=None, dtype: str | None = None, adapter_path: str | P
                train: bool = False):
     """Load the base model, optionally with a LoRA adapter attached.
 
-    Inference uses cfg.model.inference_dtype (fp16 on Kaggle T4/P100 — no bf16
-    support, pitfall 6). Training loads fp32 master weights and relies on fp16
-    autocast in the train loop instead.
+    Inference uses cfg.model.inference_dtype; training loads fp32 master weights and
+    relies on fp16 autocast in the train loop instead.
     """
     device = device or resolve_device(cfg)
     torch_dtype = DTYPES[dtype or ("float32" if train else cfg.model.inference_dtype)]

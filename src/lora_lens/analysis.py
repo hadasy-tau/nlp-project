@@ -22,20 +22,112 @@ from .utils import batched, free_model, load_model
 
 def build_eval_table(cfg, conditions: pd.DataFrame) -> pd.DataFrame:
     """One row per (fact, prompt). Training prompts are 'train'; paraphrases are the
-    held-out probes ('paraphrase') that never appeared in LoRA training (pitfall 3)."""
+    held-out probes ('paraphrase') that never appeared in LoRA training (pitfall 3).
+
+    Train rows carry base_answer_rank/base_answer_logprob from score_base so the base
+    variant can be checked against them (see _check_base_final_layer); paraphrases have
+    no cached value.
+    """
     rows = []
     for _, r in conditions.iterrows():
         rows.append({"fact_id": r["fact_id"], "condition": r["condition"],
                      "prompt": r["prompt"], "prompt_type": "train",
-                     "answer_token_id": r["answer_token_id"]})
+                     "answer_token_id": r["answer_token_id"],
+                     "base_answer_rank": r.get("base_answer_rank", float("nan")),
+                     "base_answer_logprob": r.get("base_answer_logprob", float("nan"))})
         if cfg.analysis.eval_paraphrases:
             val = r.get("paraphrases", None)
             paras = list(val) if val is not None and hasattr(val, "__iter__") else []
             for p in paras:
                 rows.append({"fact_id": r["fact_id"], "condition": r["condition"],
                              "prompt": str(p).rstrip(), "prompt_type": "paraphrase",
-                             "answer_token_id": r["answer_token_id"]})
+                             "answer_token_id": r["answer_token_id"],
+                             "base_answer_rank": float("nan"),
+                             "base_answer_logprob": float("nan")})
     return pd.DataFrame(rows)
+
+
+def _check_base_final_layer(frame: pd.DataFrame, eval_df: pd.DataFrame,
+                            allow_reconcile: bool = False,
+                            logprob_atol: float = 0.05,
+                            latent_threshold: float = -5.0) -> pd.DataFrame:
+    """Assert analyze's base re-scoring agrees with score_base on the thresholds the
+    condition split is built from: rank==1, rank<=5 and the latent log-prob gate.
+
+    Raw rank and log-prob equality is deliberately not asserted; deep-tail ranks and
+    the last few log-prob digits drift with batch shape at any precision without
+    moving a fact across a threshold. logprob_atol is a structural-breakage guard,
+    not a precision test. Set allow_reconcile to overwrite instead of aborting.
+    """
+    cache = eval_df.loc[eval_df["prompt_type"] == "train",
+                        ["prompt_idx", "base_answer_rank", "base_answer_logprob"]].dropna()
+    if cache.empty:
+        return frame
+    cache = cache.set_index("prompt_idx")
+
+    n_layers = frame["layer"].max()
+    final_mask = frame["layer"] == n_layers
+    has_cache = frame["prompt_idx"].isin(cache.index)
+    target = final_mask & has_cache
+    if not target.any():
+        return frame
+
+    measured_rank = frame.loc[target, "answer_rank"]
+    measured_lp = frame.loc[target, "answer_logprob"]
+    cached_rank = frame.loc[target, "prompt_idx"].map(cache["base_answer_rank"])
+    cached_lp = frame.loc[target, "prompt_idx"].map(cache["base_answer_logprob"])
+    n_checked = int(target.sum())
+
+    top1_flip = (measured_rank == 1) != (cached_rank == 1)
+    top5_flip = (measured_rank <= 5) != (cached_rank <= 5)
+    gate_flip = (measured_lp > latent_threshold) != (cached_lp > latent_threshold)
+    lp_gap = (measured_lp - cached_lp).abs()
+    lp_broken = lp_gap > logprob_atol
+    decisive = top1_flip | top5_flip | gate_flip | lp_broken
+
+    # Diagnostic only; small nonzero drift is expected.
+    drift = (measured_rank - cached_rank).abs()
+    n_drift = int((drift > 0).sum())
+    max_drift = int(drift.max()) if n_checked else 0
+    max_lp_gap = float(lp_gap.max()) if n_checked else 0.0
+
+    if not decisive.any():
+        note = (f"; {n_drift} row(s) differ in exact rank by <={max_drift} deep in the "
+                "tail, which no threshold depends on") if n_drift else ""
+        print(f"[analyze] base final-layer check OK: {n_checked} rows agree with "
+              f"score_base on rank==1, rank<=5 and the logprob>{latent_threshold:g} gate "
+              f"(max |dlp|={max_lp_gap:.2e}, structural guard {logprob_atol:g}){note}.")
+        return frame
+
+    # Both lenses are checked per prompt, so report distinct prompts alongside rows.
+    offenders = (frame.loc[target][decisive][["fact_id", "condition", "answer_rank"]]
+                 .assign(score_base_rank=cached_rank[decisive].to_numpy(),
+                         dlogprob=lp_gap[decisive].to_numpy())
+                 .drop_duplicates())
+    n_prompts, n_decisive = len(offenders), int(decisive.sum())
+    detail = offenders.head(10).to_string(index=False)
+    if not allow_reconcile:
+        raise SystemExit(
+            f"\n[analyze] BASE RE-SCORING DISAGREES WITH score_base ON A DECISION "
+            f"THRESHOLD: {n_decisive}/{n_checked} final-layer rows "
+            f"({n_prompts} distinct prompts).\n"
+            f"  rank==1 flips: {int(top1_flip.sum())}   rank<=5 flips: "
+            f"{int(top5_flip.sum())}   logprob>{latent_threshold:g} gate flips: "
+            f"{int(gate_flip.sum())}   |dlogprob|>{logprob_atol:g} (structural): "
+            f"{int(lp_broken.sum())}\n"
+            "The condition split is not reproducible, so base accuracy will not match "
+            "the selection rule (known != 1.000, latent != 0.000).\n"
+            f"First offenders:\n{detail}\n\n"
+            "Fix: --set model.inference_dtype=float32, or set "
+            "analysis.allow_reconcile=true to overwrite instead."
+        )
+
+    print(f"[analyze] WARNING: reconciled {n_decisive}/{n_checked} rows "
+          f"({n_prompts} prompts) that crossed a decision threshold vs score_base; "
+          "the base column is now definitional rather than measured.")
+    frame.loc[target, "answer_rank"] = cached_rank.astype(int).to_numpy()
+    frame.loc[target, "answer_logprob"] = cached_lp.to_numpy()
+    return frame
 
 
 @torch.no_grad()
@@ -59,14 +151,21 @@ def _run_variant(cfg, model, tokenizer, eval_df: pd.DataFrame, tuned_lens, devic
 
 
 def summarize(layerwise: pd.DataFrame) -> pd.DataFrame:
-    """Vectorized per-prompt then per-group aggregation (fast on millions of rows)."""
+    """Vectorized per-prompt then per-group aggregation (fast on millions of rows).
+
+    mean_first_layer averages only over prompts that ever reach top-1, so it is
+    reported with its denominator (n_first_layer) and frac_never_top1.
+    """
     n_layers = layerwise["layer"].max()
     keys = ["variant", "step", "condition", "prompt_type", "lens", "prompt_idx"]
 
     # Exactly one final-layer row per (variant, lens, prompt).
     final = layerwise[layerwise["layer"] == n_layers].copy()
     final["final_correct"] = final["answer_rank"] == 1
-    per_prompt = final[keys + ["final_correct", "answer_logprob"]]
+    final["final_top5"] = final["answer_rank"] <= 5
+    final["reciprocal_rank"] = 1.0 / final["answer_rank"]
+    per_prompt = final[keys + ["final_correct", "final_top5", "reciprocal_rank",
+                               "answer_logprob"]]
 
     # First layer of appearance = earliest layer where the answer is top-1 (NaN if never).
     first = (layerwise[layerwise["answer_rank"] == 1]
@@ -76,8 +175,11 @@ def summarize(layerwise: pd.DataFrame) -> pd.DataFrame:
     return (
         per_prompt.groupby(keys[:-1])
         .agg(final_accuracy=("final_correct", "mean"),
+             final_top5_accuracy=("final_top5", "mean"),
+             final_mrr=("reciprocal_rank", "mean"),
              mean_final_logprob=("answer_logprob", "mean"),
              mean_first_layer=("first_layer", "mean"),
+             n_first_layer=("first_layer", "count"),   # denominator of mean_first_layer
              frac_never_top1=("first_layer", lambda s: s.isna().mean()),
              n_prompts=("final_correct", "size"))
         .reset_index()
@@ -98,12 +200,15 @@ def report_highlights(summary: pd.DataFrame) -> None:
         return
 
     merge_keys = ["condition", "prompt_type", "lens"]
-    joined = final.merge(base[merge_keys + ["final_accuracy", "mean_first_layer"]],
-                         on=merge_keys, suffixes=("_final", "_base"))
+    joined = final.merge(
+        base[merge_keys + ["final_accuracy", "mean_first_layer", "n_first_layer"]],
+        on=merge_keys, suffixes=("_final", "_base"))
     joined["acc_gain"] = joined["final_accuracy_final"] - joined["final_accuracy_base"]
     joined["layer_shift"] = joined["mean_first_layer_final"] - joined["mean_first_layer_base"]
 
     print("\n[analyze] === Key findings (base → final, logit lens) ===")
+    print("  n = prompts each mean first-layer is averaged over; unequal n means the "
+          "shift is not like-for-like.")
     logit = joined[joined["lens"] == "logit"].sort_values(["prompt_type", "condition"])
     for _, row in logit.iterrows():
         tag = f"{row['condition']:9s} / {row['prompt_type']:10s}"
@@ -111,11 +216,15 @@ def report_highlights(summary: pd.DataFrame) -> None:
         acc_f = row["final_accuracy_final"]
         gain = row["acc_gain"]
         shift = row["layer_shift"]
+        n_b, n_f = int(row["n_first_layer_base"]), int(row["n_first_layer_final"])
+        warn = "  <-- n differs >2x, shift not comparable" \
+            if min(n_b, n_f) and max(n_b, n_f) > 2 * min(n_b, n_f) else ""
         print(f"  {tag}  acc {acc_b:.3f} → {acc_f:.3f}  (Δ={gain:+.3f})  "
-              f"first-layer shift {shift:+.1f}")
+              f"first-layer shift {shift:+.1f}  (n={n_b}→{n_f}){warn}")
 
     # Highlight the unknown vs known paraphrase contrast.
-    # (Synthetic facts have no CounterFact paraphrase prompts, so that condition is absent here.)
+    # Synthetic facts now also carry held-out paraphrases (make_synthetic in data.py);
+    # older runs without them simply lack a synthetic paraphrase row here.
     para = logit[logit["prompt_type"] == "paraphrase"].set_index("condition")
     if "unknown" in para.index and "known" in para.index:
         unk_gain = para.loc["unknown", "acc_gain"]
@@ -158,8 +267,14 @@ def run_analysis(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
             model = base_model
         else:
             model = load_model(cfg, device=device, adapter_path=adapter)
-        frames.append(_run_variant(cfg, model, tokenizer, eval_df, tuned_lens, device,
-                                   label, step))
+        frame = _run_variant(cfg, model, tokenizer, eval_df, tuned_lens, device,
+                             label, step)
+        if label == "base":
+            frame = _check_base_final_layer(
+                frame, eval_df, cfg.analysis.get("allow_reconcile", False),
+                cfg.analysis.get("logprob_atol", 0.05),
+                cfg.data.get("latent_logprob_threshold", -5.0))
+        frames.append(frame)
         if adapter is not None:
             free_model(model)
     free_model(base_model)

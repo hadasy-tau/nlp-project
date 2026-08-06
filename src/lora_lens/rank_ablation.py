@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .analysis import _run_variant, build_eval_table, summarize
+from .analysis import _check_base_final_layer, _run_variant, build_eval_table, summarize
 from .lenses import load_tuned_lens
 from .training import train_lora
 from .utils import free_model, load_model
@@ -43,6 +43,10 @@ def run_rank_ablation(cfg, tokenizer, conditions: pd.DataFrame, device) -> None:
     tuned_lens = load_tuned_lens(cfg, base_model, device)
     base_frame = _run_variant(cfg, base_model, tokenizer, eval_df, tuned_lens, device,
                                "base", 0)
+    base_frame = _check_base_final_layer(
+        base_frame, eval_df, cfg.analysis.get("allow_reconcile", False),
+        cfg.analysis.get("logprob_atol", 0.05),
+        cfg.data.get("latent_logprob_threshold", -5.0))
     base_frame["rank"] = 0
     free_model(base_model)
 

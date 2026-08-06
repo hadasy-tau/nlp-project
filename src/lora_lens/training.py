@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from peft import LoraConfig, get_peft_model
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
@@ -57,6 +56,9 @@ def make_collate(pad_id: int):
 
 def train_lora(cfg, tokenizer, conditions: pd.DataFrame, device) -> Path:
     """Fine-tune LoRA on all three conditions jointly; returns the lora output dir."""
+    # Lazy so list_checkpoints stays importable without peft.
+    from peft import LoraConfig, get_peft_model
+
     out_dir = Path(cfg.output_dir) / "lora"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -77,7 +79,7 @@ def train_lora(cfg, tokenizer, conditions: pd.DataFrame, device) -> Path:
                         collate_fn=make_collate(tokenizer.pad_token_id))
     opt = torch.optim.AdamW((p for p in model.parameters() if p.requires_grad), lr=cfg.lora.lr)
     use_amp = device.type == "cuda"
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
 
     step = 0
     log_rows = []
